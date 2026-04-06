@@ -1392,22 +1392,40 @@ function renderChartDaily(data, todayRow, cur) {
 
 // ─── CHART: COMPARISON ──────────────────────────────────
 function renderChartComp(data, todayRow) {
-  const curOffset = n(data[todayRow]?.[FEED.tickets.dayCol]);
+  const curOffset = n(data[todayRow]?.[FEED.tickets.dayCol]); // today's day offset (e.g. -17)
   const widths = [1.5, 1.5, 2, 2.5];
   const datasets = [];
-  const allLabels = [];
+
+  // Build master x-axis: all unique day offsets across all visible festivals
+  // Past festivals → up to day 0 (event day). Current → up to today only.
+  const offsetSet = new Set();
+  FEED.tickets.events.forEach((ev, idx) => {
+    if (!compVisible.includes(idx)) return;
+    const isCurrent = idx === FEED.tickets.currentIdx;
+    const maxOffset = isCurrent ? curOffset : 0;
+    for (let i = FEED.tickets.dataStartRow; i < data.length; i++) {
+      const d = n(data[i]?.[FEED.tickets.dayCol]);
+      const v = n(data[i]?.[ev.cumCol]);
+      if (d <= maxOffset && v > 0) offsetSet.add(d);
+    }
+  });
+  const masterLabels = [...offsetSet].sort((a, b) => a - b); // ascending (most negative → 0)
 
   FEED.tickets.events.forEach((ev, idx) => {
-    if (!compVisible.includes(idx)) return; // skip unchecked events
-    const labels = [], vals = [];
-    for (let i = data.length-1; i >= FEED.tickets.dataStartRow; i--) {
+    if (!compVisible.includes(idx)) return;
+    const isCurrent = idx === FEED.tickets.currentIdx;
+    const maxOffset = isCurrent ? curOffset : 0;
+
+    // Build day→value map for this festival
+    const map = {};
+    for (let i = FEED.tickets.dataStartRow; i < data.length; i++) {
       const d = n(data[i]?.[FEED.tickets.dayCol]);
-      if (d > curOffset) continue;
       const v = n(data[i]?.[ev.cumCol]);
-      if (v > 0) { labels.push(d); vals.push(v); }
+      if (d <= maxOffset && v > 0) map[d] = v;
     }
-    if (vals.length) {
-      if (labels.length > allLabels.length) labels.forEach((l,i) => allLabels[i]=l);
+
+    const vals = masterLabels.map(label => map[label] ?? null);
+    if (vals.some(v => v !== null)) {
       datasets.push({
         label: ev.name,
         data: vals,
@@ -1416,6 +1434,7 @@ function renderChartComp(data, todayRow) {
         borderWidth: widths[idx],
         pointRadius: 0,
         tension: 0.3,
+        spanGaps: true, // connect across any missing days
       });
     }
   });
@@ -1446,7 +1465,7 @@ function renderChartComp(data, todayRow) {
   };
   chartComp = new Chart(ctx, {
     type: 'line',
-    data: { labels: allLabels, datasets },
+    data: { labels: masterLabels, datasets },
     options: compOpts,
     plugins: [compPinPlugin],
   });
