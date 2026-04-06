@@ -1160,8 +1160,9 @@ const FEED = {
 const TZ = 'Asia/Jerusalem';
 
 // ═══════════════════════════════════════════════════════
-// DEFAULT FESTIVAL — baked in so any device auto-loads after login
+// DEFAULTS — baked in so any device works immediately
 // ═══════════════════════════════════════════════════════
+const DEFAULT_PASSWORD = 'Eladiswin666';
 const DEFAULT_FEST = {
   name: 'DB26APR',
   appsScriptUrl: 'https://script.google.com/macros/s/AKfycbzORhEhNPQsRfm2w3vlgtg3oBDh43NW0sjjy51r7JXQ0qyIKThpP3JT38O2wsNzF9jZsg/exec',
@@ -1816,16 +1817,12 @@ function seedDefaultFest() {
 }
 
 function checkPassword() {
-  const stored = localStorage.getItem('dashPassword');
+  const stored = localStorage.getItem('dashPassword') || DEFAULT_PASSWORD;
   const input = document.getElementById('pwdInput').value;
-  if (!stored) {
-    authenticated = true;
-    document.getElementById('passwordOverlay').classList.add('hidden');
-    openSettings();
-    return;
-  }
   if (input === stored) {
     authenticated = true;
+    // Persist password to localStorage so this device works offline too
+    localStorage.setItem('dashPassword', stored);
     if (document.getElementById('rememberMe')?.checked) {
       localStorage.setItem('rememberMe', '1');
     }
@@ -2148,22 +2145,16 @@ function hideError() { document.getElementById('errorBar').style.display='none';
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   hideLoading();
-  const hasPwd = localStorage.getItem('dashPassword');
   const remembered = localStorage.getItem('rememberMe') === '1';
-  if (!hasPwd && !festivals.length) {
-    document.getElementById('passwordOverlay').classList.add('hidden');
-    openSettings();
-  } else if (hasPwd && remembered) {
+  if (remembered) {
     // Skip password gate — remembered device
     authenticated = true;
     document.getElementById('passwordOverlay').classList.add('hidden');
     seedDefaultFest();
     if (festivals.length) { renderFestTabs(); loadData(); } else { openSettings(); }
-  } else if (hasPwd) {
-    document.getElementById('pwdInput').focus();
   } else {
-    document.getElementById('passwordOverlay').classList.add('hidden');
-    openSettings();
+    // Always show password gate — default password baked in
+    document.getElementById('pwdInput').focus();
   }
   setInterval(() => { if (festivals.length && authenticated) loadData(); }, 5*60*1000);
 });
