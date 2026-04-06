@@ -1160,6 +1160,16 @@ const FEED = {
 const TZ = 'Asia/Jerusalem';
 
 // ═══════════════════════════════════════════════════════
+// DEFAULT FESTIVAL — baked in so any device auto-loads after login
+// ═══════════════════════════════════════════════════════
+const DEFAULT_FEST = {
+  name: 'DB26APR',
+  appsScriptUrl: 'https://script.google.com/macros/s/AKfycbzORhEhNPQsRfm2w3vlgtg3oBDh43NW0sjjy51r7JXQ0qyIKThpP3JT38O2wsNzF9jZsg/exec',
+  eventDate: '23/04/2026',
+  launchDate: '07/12/2025',
+};
+
+// ═══════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════
 let festivals = JSON.parse(localStorage.getItem('festivals') || '[]');
@@ -1795,6 +1805,16 @@ function togglePwdVis() {
   else { input.type = 'password'; btn.textContent = '👁'; }
 }
 
+function seedDefaultFest() {
+  // If no festivals saved on this device, auto-load the baked-in default
+  if (!festivals.length && DEFAULT_FEST.appsScriptUrl) {
+    festivals = [{ ...DEFAULT_FEST }];
+    activeFest = 0;
+    saveFestivalsToStorage();
+    localStorage.setItem('activeFest', '0');
+  }
+}
+
 function checkPassword() {
   const stored = localStorage.getItem('dashPassword');
   const input = document.getElementById('pwdInput').value;
@@ -1811,6 +1831,7 @@ function checkPassword() {
     }
     document.getElementById('passwordOverlay').classList.add('hidden');
     document.getElementById('pwdError').textContent = '';
+    seedDefaultFest();
     if (festivals.length) { renderFestTabs(); loadData(); } else { openSettings(); }
   } else {
     document.getElementById('pwdError').textContent = 'Wrong password';
@@ -2136,6 +2157,7 @@ window.addEventListener('DOMContentLoaded', () => {
     // Skip password gate — remembered device
     authenticated = true;
     document.getElementById('passwordOverlay').classList.add('hidden');
+    seedDefaultFest();
     if (festivals.length) { renderFestTabs(); loadData(); } else { openSettings(); }
   } else if (hasPwd) {
     document.getElementById('pwdInput').focus();
