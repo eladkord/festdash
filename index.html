@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Festival Sales Dashboard</title>
+<title>FestDash</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><rect x='1.5' y='1.5' width='29' height='29' rx='5' fill='none' stroke='%23c8ff00' stroke-width='1.5' stroke-opacity='0.5'/><text x='16' y='14' font-family='Arial Black,sans-serif' font-size='8' font-weight='900' fill='%23c8ff00' text-anchor='middle' letter-spacing='0.5'>FEST</text><text x='16' y='25' font-family='Arial Black,sans-serif' font-size='10' font-weight='900' fill='%23ffffff' text-anchor='middle' letter-spacing='1'>Dash</text></svg>">
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Heebo:wght@700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
@@ -609,13 +610,22 @@ body::before {
 /* ── GLANCE BAR ── */
 .glance-bar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
   background: linear-gradient(135deg, rgba(13,17,23,0.95), rgba(26,32,48,0.8));
   border: 1px solid var(--border2);
   border-radius: 12px;
-  padding: 16px 28px;
+  padding: 0 28px;
   margin-bottom: 0;
+}
+.glance-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  width: 100%;
+  padding: 18px 0;
+}
+.glance-row + .glance-row {
+  border-top: 1px solid var(--border);
 }
 .glance-item { text-align: center; flex: 1; }
 .glance-label {
@@ -628,7 +638,7 @@ body::before {
 }
 .glance-val {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.8rem;
+  font-size: 2.4rem;
   color: var(--accent);
   line-height: 1;
 }
@@ -860,33 +870,33 @@ body::before {
 
   <!-- QUICK GLANCE BAR -->
   <div class="glance-bar" id="glanceBar">
-    <div class="glance-item"><div class="glance-label">Today</div><div class="glance-val" id="gToday">—</div></div>
-    <div class="glance-sep"></div>
-    <div class="glance-item glance-wide">
-      <div class="glance-label">Now / SO</div>
-      <div class="glance-so-row">
-        <span class="glance-so-nums" id="gSOnum">—</span>
+    <!-- Row 1: Live state -->
+    <div class="glance-row">
+      <div class="glance-item"><div class="glance-label">Today</div><div class="glance-val" id="gToday">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item glance-wide">
+        <div class="glance-label">Now / SO</div>
+        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
+        <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
+        <div class="glance-so-remain" id="gSOremain">—</div>
       </div>
-      <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
-      <div class="glance-so-remain" id="gSOremain">—</div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">7-Day Avg</div><div class="glance-val" id="gAvg7">—</div></div>
     </div>
-    <div class="glance-sep"></div>
-    <div class="glance-item">
-      <div class="glance-label">SO %</div>
-      <div class="glance-val" id="gSOpct">—</div>
+    <!-- Row 2: Targets & projections -->
+    <div class="glance-row">
+      <div class="glance-item">
+        <div class="glance-label">Projected</div>
+        <div class="glance-val" id="gProjected">—</div>
+        <div class="glance-compare" id="gCompare"></div>
+      </div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">BEP</div><div class="glance-val" id="gBEP">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">TPD for SO</div><div class="glance-val" id="gTPD">—</div></div>
     </div>
-    <div class="glance-sep"></div>
-    <div class="glance-item"><div class="glance-label">7-Day Avg</div><div class="glance-val" id="gAvg7">—</div></div>
-    <div class="glance-sep"></div>
-    <div class="glance-item">
-      <div class="glance-label">Projected</div>
-      <div class="glance-val" id="gProjected">—</div>
-      <div class="glance-compare" id="gCompare"></div>
-    </div>
-    <div class="glance-sep"></div>
-    <div class="glance-item"><div class="glance-label">BEP</div><div class="glance-val" id="gBEP">—</div></div>
-    <div class="glance-sep"></div>
-    <div class="glance-item"><div class="glance-label">TPD for SO</div><div class="glance-val" id="gTPD">—</div></div>
   </div>
   <div class="expand-row" onclick="toggleDetails()">
     <span class="expand-line"></span>
@@ -906,9 +916,9 @@ body::before {
       <div class="card-label">Today's Sales</div>
       <div class="card-value xl" id="kTodaySales">—</div>
       <div class="card-sub" id="kTodaySub">tickets sold today</div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
-        <div class="badge badge-neutral" id="kTodayBadge" style="margin-top:0">—</div>
-        <div class="badge badge-neutral" id="kAvgBadge" style="margin-top:0">—</div>
+      <div style="display:flex;gap:6px;flex-wrap:nowrap;margin-top:10px">
+        <div class="badge badge-neutral" id="kTodayBadge" style="margin-top:0;white-space:nowrap">—</div>
+        <div class="badge badge-neutral" id="kAvgBadge" style="margin-top:0;white-space:nowrap">—</div>
       </div>
     </div>
     <div class="card">
@@ -1340,14 +1350,16 @@ function renderTickets(fest) {
   const avg14 = d14.length ? Math.round(d14.reduce((a,b)=>a+b,0)/d14.length) : 0;
   document.getElementById('kAvg14').textContent = avg14.toLocaleString();
 
-  // Badge vs yesterday
+  // Badge vs yesterday (show actual date e.g. "6.4")
   if (todayRow+1 < data.length) {
     const yest = n(data[todayRow+1]?.[cur.deltaCol]);
     const diff = todayDelta - yest;
     const badge = document.getElementById('kTodayBadge');
-    if (diff > 0) { badge.className='badge badge-up'; badge.textContent=`▲ ${diff} vs yesterday`; }
-    else if (diff < 0) { badge.className='badge badge-down'; badge.textContent=`▼ ${Math.abs(diff)} vs yesterday`; }
-    else { badge.className='badge badge-neutral'; badge.textContent='— same as yesterday'; }
+    const yd = new Date(nowIL().getTime() - 86400000);
+    const yLabel = `${yd.getDate()}.${yd.getMonth()+1}`;
+    if (diff > 0) { badge.className='badge badge-up'; badge.textContent=`▲ ${diff} vs ${yLabel}`; }
+    else if (diff < 0) { badge.className='badge badge-down'; badge.textContent=`▼ ${Math.abs(diff)} vs ${yLabel}`; }
+    else { badge.className='badge badge-neutral'; badge.textContent=`— vs ${yLabel}`; }
   }
 
   // Badge vs weekly avg
