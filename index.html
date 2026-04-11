@@ -908,29 +908,21 @@ body::before {
       <!-- SO group -->
       <div style="flex:1;text-align:center">
         <div class="glance-label">SO</div>
-        <div style="display:flex;justify-content:center;gap:12px;align-items:center">
-          <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.65rem">%</div><div class="glance-val" id="gSOpct">—</div>
-          </div>
-          <div style="width:1px;height:30px;background:var(--border2)"></div>
-          <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.65rem">TPD</div><div class="glance-val" id="gTPDSO">—</div>
-          </div>
+        <div style="display:flex;justify-content:center;gap:16px;align-items:baseline">
+          <div class="glance-val" id="gSOpct">—</div>
+          <div class="glance-val" id="gTPDSO">—</div>
         </div>
+        <div class="glance-label" style="font-size:0.65rem;margin-top:4px">TPD</div>
       </div>
       <div class="glance-sep"></div>
       <!-- BEP group -->
       <div style="flex:1;text-align:center">
         <div class="glance-label">BEP</div>
-        <div style="display:flex;justify-content:center;gap:12px;align-items:center">
-          <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.65rem">%</div><div class="glance-val" id="gBEP">—</div>
-          </div>
-          <div style="width:1px;height:30px;background:var(--border2)"></div>
-          <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.65rem">TPD</div><div class="glance-val" id="gTPDBEP">—</div>
-          </div>
+        <div style="display:flex;justify-content:center;gap:16px;align-items:baseline">
+          <div class="glance-val" id="gBEP">—</div>
+          <div class="glance-val" id="gTPDBEP">—</div>
         </div>
+        <div class="glance-label" style="font-size:0.65rem;margin-top:4px">TPD</div>
       </div>
     </div>
   </div>
@@ -994,7 +986,7 @@ body::before {
         </div>
       </div>
       <div class="card-value" id="kFestCompPct">—</div>
-      <div class="card-sub" id="kFestCompTickets">— tickets</div>
+      <div class="card-sub" id="kFestCompTickets" style="font-size:2em;margin-top:8px">— tickets</div>
     </div>
   </div>
 
@@ -1254,10 +1246,32 @@ function toggleFestDropdown(e) {
   const menu = document.getElementById('festCompDropdownMenu');
   menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
 }
+function updateFestDropdownColor() {
+  const btn = document.getElementById('festCompDropdown');
+  const color = COMP_COLORS[comparisonFestIdx];
+  btn.style.background = color + '40'; // 40 = ~25% opacity
+  btn.style.borderColor = color;
+  btn.style.color = '#fff';
+  // Update dropdown menu items to show active status
+  document.querySelectorAll('#festCompDropdownMenu .fest-chip').forEach((chip, idx) => {
+    if (idx === comparisonFestIdx) {
+      chip.classList.add('on');
+      chip.style.background = COMP_COLORS[idx] + '40';
+      chip.style.borderColor = COMP_COLORS[idx];
+      chip.style.color = '#fff';
+    } else {
+      chip.classList.remove('on');
+      chip.style.background = 'transparent';
+      chip.style.borderColor = 'transparent';
+      chip.style.color = 'var(--muted)';
+    }
+  });
+}
 function changeFestComparison(festName, idx) {
   comparisonFestIdx = idx;
   document.getElementById('festCompName').textContent = festName;
   document.getElementById('festCompDropdownMenu').style.display = 'none';
+  updateFestDropdownColor();
   loadData(); // reload to recalculate comparison
 }
 document.addEventListener('click', () => {
@@ -1434,6 +1448,7 @@ function renderAll(fest) {
   setupRangeTabs();
   renderInsights(fest);
   renderSentiment(fest);
+  updateFestDropdownColor();
   document.getElementById('topFestBadge').textContent = fest.name || '—';
 }
 
