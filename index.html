@@ -1473,6 +1473,8 @@ function loadCache(fest) {
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
     if (Date.now() - ts > CACHE_TTL) return null;
+    // Invalidate if missing ppc_budget_total (old cache from pre-fix deployment)
+    if (data.budget && data.budget.ppc_budget_total === undefined) return null;
     return { data, ageMs: Date.now() - ts };
   } catch(e) { return null; }
 }
