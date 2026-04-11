@@ -35,8 +35,9 @@ function doGet(e) {
   const budgetRaw = sheet.getRange('A3:C14').getValues();
   const budget    = {};
   budgetRaw.forEach(([k,,v]) => { if (k) budget[k] = v; });
-  // PPC budget — C25 (manual field)
+  // PPC budget — C25 (current spend), C26 (total budget)
   budget['ppc_budget'] = sheet.getRange('C25').getValue();
+  budget['ppc_budget_total'] = sheet.getRange('C26').getValue();
 
   // Meta Ads — A18:C23 (key in col A, value in col C)
   const adsRaw = sheet.getRange('A18:C23').getValues();
