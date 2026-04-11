@@ -1880,34 +1880,34 @@ function renderMeta(fest) {
   const cplTod   = val('cpl_today','cplToday');
   const cplAvg   = val('cpl_avg_7d','cplAvg');
 
-  // Total spend with budget
+  // Total spend with budget — ppc_budget_total from API, fallback to ppc_budget (C25)
+  const budget = appScriptData.budget || {};
+  const ppcBudgetMax = n(budget.ppc_budget_total) || n(budget.ppc_budget) || 0;
   if (spend) {
-    const budget = appScriptData.budget || {};
-    const ppcBudgetMax = budget.ppc_budget_total || 0;
     const spendRounded = Math.round(spend);
     const budgetRounded = Math.round(ppcBudgetMax);
-    set('kMetaSpend', '₪' + spendRounded.toLocaleString() + ' / ' + budgetRounded.toLocaleString());
+    const budgetStr = budgetRounded > 0 ? ' / ' + budgetRounded.toLocaleString() : '';
+    set('kMetaSpend', '₪' + spendRounded.toLocaleString() + budgetStr);
   }
-  set('kMetaSpend7',    spend7   ? '₪' + spend7.toLocaleString() : null);
+  set('kMetaSpend7',    spend7   ? '₪' + Math.round(spend7).toLocaleString() : null);
   set('kMetaConvToday', convTod);
   set('kMetaConvAvg',   convAvg  ? convAvg.toFixed(1) : null);
-  set('kMetaCPLToday',  cplTod   ? '₪' + cplTod : null);
-  set('kMetaCPL',       cplAvg   ? '₪' + cplAvg : null);
+  set('kMetaCPLToday',  cplTod   ? '₪' + Math.round(cplTod) : null);
+  set('kMetaCPL',       cplAvg   ? '₪' + cplAvg.toFixed(2) : null);
 
-  // Budget progress (from global budget object)
-  const budget = appScriptData.budget || {};
-  const ppcBudgetMax = budget.ppc_budget_total || 0;
+  // Budget progress bar
   if (spend && ppcBudgetMax) {
     const pct = (spend / ppcBudgetMax * 100).toFixed(0);
     set('kBudgetPct', pct + '%');
-    set('kBudgetSpent', '₪' + spend.toLocaleString());
-    set('kBudgetMax', '₪' + ppcBudgetMax.toLocaleString());
+    set('kBudgetSpent', '₪' + Math.round(spend).toLocaleString());
+    set('kBudgetMax', '₪' + Math.round(ppcBudgetMax).toLocaleString());
     const barEl = document.getElementById('barBudget');
     if (barEl) barEl.style.width = Math.min(pct, 100) + '%';
   }
 
   // Projected conversions until event (conv_avg_7d × DTE)
-  const dte = n(document.getElementById('gDTE')?.textContent) || 0;
+  // DTE comes from budget object (Days To Event), not a DOM element
+  const dte = n(budget.DTE) || 0;
   if (convAvg && dte) {
     const projConv = Math.round(convAvg * dte);
     set('kProjConv', projConv);
