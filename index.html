@@ -1020,15 +1020,29 @@ body::before {
       <div class="card-top-line tl-yellow"></div>
       <div class="card-label" style="display:flex;justify-content:space-between;align-items:center">
         Daily Sales
-        <div class="range-tabs" id="dailyRange">
-          <span class="range-tab" data-days="3">3D</span>
-          <span class="range-tab active" data-days="7">7D</span>
-          <span class="range-tab" data-days="14">14D</span>
-          <span class="range-tab" data-days="30">30D</span>
-          <span class="range-tab" data-days="0">ALL</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="range-tabs" id="dailyRange">
+            <span class="range-tab" data-days="3">3D</span>
+            <span class="range-tab active" data-days="7">7D</span>
+            <span class="range-tab" data-days="14">14D</span>
+            <span class="range-tab" data-days="30">30D</span>
+            <span class="range-tab" data-days="0">ALL</span>
+          </div>
+          <span class="range-tab" id="dailyTableBtn" onclick="toggleDailyTable()" style="cursor:pointer">TABLE</span>
         </div>
       </div>
-      <div class="chart-container h280"><canvas id="chartDaily"></canvas></div>
+      <div class="chart-container h280" id="dailyChartWrap"><canvas id="chartDaily"></canvas></div>
+      <div id="dailyTableWrap" style="display:none;max-height:280px;overflow-y:auto">
+        <table id="dailyTable" style="width:100%;border-collapse:collapse;font-family:'JetBrains Mono',monospace;font-size:0.72rem">
+          <thead><tr style="background:rgba(200,255,0,0.08);color:var(--accent)">
+            <th style="padding:6px 8px;text-align:left">DATE</th>
+            <th style="padding:6px 8px;text-align:right">DTE</th>
+            <th style="padding:6px 8px;text-align:right">Total</th>
+            <th style="padding:6px 8px;text-align:right">Daily</th>
+          </tr></thead>
+          <tbody id="dailyTableBody"></tbody>
+        </table>
+      </div>
     </div>
     <div class="card">
       <div class="card-top-line tl-purple"></div>
@@ -1396,6 +1410,69 @@ const compPinPlugin = {
   }
 };
 
+// Chart.js plugin: draw "TODAY" vertical line on comparison chart
+let compTodayDayOffset = null; // set when rendering comparison chart
+const compTodayPlugin = {
+  id: 'compToday',
+  afterDraw(chart) {
+    if (chart.canvas.id !== 'chartComp' || compTodayDayOffset === null) return;
+    const { ctx, chartArea, scales, data } = chart;
+    const idx = data.labels?.indexOf(compTodayDayOffset);
+    if (idx < 0) return;
+    const x = scales.x.getPixelForValue(idx);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 100, 100, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(x, chartArea.top);
+    ctx.lineTo(x, chartArea.bottom);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(255, 100, 100, 0.85)';
+    ctx.font = 'bold 9px JetBrains Mono, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('TODAY', x, chartArea.top - 4);
+    ctx.restore();
+  }
+};
+
+// ─── DAILY TABLE TOGGLE ──────────────────────────────────
+let dailyTableVisible = false;
+function toggleDailyTable() {
+  dailyTableVisible = !dailyTableVisible;
+  document.getElementById('dailyChartWrap').style.display = dailyTableVisible ? 'none' : '';
+  document.getElementById('dailyTableWrap').style.display = dailyTableVisible ? '' : 'none';
+  const btn = document.getElementById('dailyTableBtn');
+  btn.classList.toggle('active', dailyTableVisible);
+}
+function renderDailyTable(data, todayRow, cur) {
+  const tbody = document.getElementById('dailyTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  const fest = festivals[activeFest];
+  const eventDate = parseDate(fest.eventDate);
+  const maxRow = dailyDays === 0 ? data.length - 1 : Math.min(data.length - 1, todayRow + dailyDays - 1);
+  for (let i = todayRow; i <= maxRow; i++) {
+    const dayOffset = n(data[i]?.[FEED.tickets.dayCol]);
+    const cumVal    = n(data[i]?.[cur.cumCol]);
+    const deltaVal  = n(data[i]?.[cur.deltaCol]);
+    const actualDate = new Date(eventDate);
+    actualDate.setDate(actualDate.getDate() + dayOffset);
+    const dateStr = String(actualDate.getDate()).padStart(2,'0') + '/' + String(actualDate.getMonth()+1).padStart(2,'0');
+    const isToday = i === todayRow;
+    const tr = document.createElement('tr');
+    tr.style.cssText = isToday
+      ? 'background:rgba(200,255,0,0.08);color:#c8ff00'
+      : 'border-bottom:1px solid rgba(255,255,255,0.05);color:var(--fg)';
+    tr.innerHTML = `<td style="padding:5px 8px">${dateStr}</td>
+      <td style="padding:5px 8px;text-align:right;color:var(--muted)">${dayOffset}</td>
+      <td style="padding:5px 8px;text-align:right">${cumVal.toLocaleString()}</td>
+      <td style="padding:5px 8px;text-align:right;color:${deltaVal>=30?'#c8ff00':deltaVal>=15?'#fbbf24':'var(--muted)'}">${deltaVal}</td>`;
+    tbody.appendChild(tr);
+  }
+}
+
 // ═══════════════════════════════════════════════════════
 // ISRAEL TIME
 // ═══════════════════════════════════════════════════════
@@ -1474,7 +1551,7 @@ function loadCache(fest) {
     const { ts, data } = JSON.parse(raw);
     if (Date.now() - ts > CACHE_TTL) return null;
     // Invalidate if missing ppc_budget_total (old cache from pre-fix deployment)
-    if (data.budget && data.budget.ppc_budget_total === undefined) return null;
+    if (!data.budget?.ppc_budget_total) return null;
     return { data, ageMs: Date.now() - ts };
   } catch(e) { return null; }
 }
@@ -1657,6 +1734,8 @@ function renderChartDaily(data, todayRow, cur) {
     },
     options: opts
   });
+  // Also update table if visible
+  renderDailyTable(data, todayRow, cur);
 }
 
 // ─── COMPARISON ZOOM ────────────────────────────────────
@@ -1751,11 +1830,13 @@ function renderChartComp(data, todayRow) {
     }
     chartComp.update();
   };
+  // Set today day offset for the red TODAY line
+  compTodayDayOffset = curOffset;
   chartComp = new Chart(ctx, {
     type: 'line',
     data: { labels: masterLabels, datasets },
     options: compOpts,
-    plugins: [compPinPlugin],
+    plugins: [compPinPlugin, compTodayPlugin],
   });
 }
 
