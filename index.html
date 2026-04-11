@@ -1241,7 +1241,7 @@ const TZ = 'Asia/Jerusalem';
 const DEFAULT_PASSWORD = 'Eladiswin666';
 const DEFAULT_FEST = {
   name: 'DB26APR',
-  appsScriptUrl: 'https://script.google.com/macros/s/AKfycbzORhEhNPQsRfm2w3vlgtg3oBDh43NW0sjjy51r7JXQ0qyIKThpP3JT38O2wsNzF9jZsg/exec',
+  appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwINgOnlf3VaZsZgm_ddIPFmq3XPuK-BkeZbfUj5CNiCLHi7VNLRYrejo92ymlyuse9Rg/exec',
   eventDate: '23/04/2026',
   launchDate: '07/12/2025',
 };
@@ -1251,6 +1251,20 @@ const DEFAULT_FEST = {
 // ═══════════════════════════════════════════════════════
 let festivals = JSON.parse(localStorage.getItem('festivals') || '[]');
 let activeFest = parseInt(localStorage.getItem('activeFest') || '0');
+// Migrate old Apps Script URL to latest deployment
+const OLD_SCRIPT_URLS = [
+  'AKfycbzORhEhNPQsRfm2w3vlgtg3oBDh43NW0sjjy51r7JXQ0qyIKThpP3JT38O2wsNzF9jZsg',
+  'AKfycbz2_ITP4F_zwlKiIAt96WOh5hgAbRL6eQtM7WZGgpad27154URGyIeRyvjmt0fZpmADBw',
+];
+const NEW_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwINgOnlf3VaZsZgm_ddIPFmq3XPuK-BkeZbfUj5CNiCLHi7VNLRYrejo92ymlyuse9Rg/exec';
+let migrated = false;
+festivals.forEach(f => {
+  if (OLD_SCRIPT_URLS.some(old => f.appsScriptUrl && f.appsScriptUrl.includes(old))) {
+    f.appsScriptUrl = NEW_SCRIPT_URL;
+    migrated = true;
+  }
+});
+if (migrated) localStorage.setItem('festivals', JSON.stringify(festivals));
 let appScriptData = { tickets: [], budget: {}, ads: {}, raw: {} };
 let chartDaily = null, chartComp = null;
 let cdInterval = null;
