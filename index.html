@@ -713,6 +713,34 @@ body::before {
 .comp-zoom-tab:hover { color: var(--text); background: var(--s1); }
 .comp-zoom-tab.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(200,255,0,0.25); }
 
+/* ── FOX CHARACTER ── */
+@keyframes foxWalkMove  { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
+@keyframes foxRunMove   { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
+@keyframes foxPanicMove { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
+@keyframes foxSleepMove { 0%{transform:translateX(30vw)} 100%{transform:translateX(30vw)} }
+@keyframes foxBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+@keyframes foxRunBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes foxPanicBob { 0%,100%{transform:translateY(0) rotate(0deg)} 25%{transform:translateY(-8px) rotate(-3deg)} 75%{transform:translateY(-5px) rotate(3deg)} }
+@keyframes foxLegWalk { 0%,100%{height:6px;transform:rotate(0deg)} 50%{height:8px;transform:rotate(10deg)} }
+@keyframes foxLegRun  { 0%,100%{height:4px;transform:rotate(-15deg)} 50%{height:10px;transform:rotate(15deg)} }
+@keyframes foxTailWag { 0%,100%{transform:rotate(-20deg)} 50%{transform:rotate(10deg)} }
+@keyframes foxTailDroop { 0%,100%{transform:rotate(10deg)} 50%{transform:rotate(20deg)} }
+@keyframes foxSleepBob { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(0.9)} }
+@keyframes foxCelebrate { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-12px) rotate(-5deg)} 75%{transform:translateY(-8px) rotate(5deg)} }
+
+#foxChar.fox-walk   { animation: foxWalkMove 18s linear infinite, foxBob 0.5s ease-in-out infinite; }
+#foxChar.fox-trot   { animation: foxWalkMove 10s linear infinite, foxBob 0.35s ease-in-out infinite; }
+#foxChar.fox-run    { animation: foxRunMove 6s linear infinite, foxRunBob 0.25s ease-in-out infinite; }
+#foxChar.fox-panic  { animation: foxPanicMove 3.5s linear infinite, foxPanicBob 0.18s ease-in-out infinite; }
+#foxChar.fox-sleep  { animation: foxSleepMove 0s linear, foxSleepBob 2s ease-in-out infinite; left:35% !important; transform:none !important; }
+#foxChar.fox-celebrate { animation: foxCelebrate 0.6s ease-in-out infinite; left:45% !important; }
+
+#foxChar.fox-sleep #foxSvg  { transform: rotate(90deg) translateX(10px); transform-origin: center; }
+#foxChar.fox-run   #foxTail,
+#foxChar.fox-trot  #foxTail  { animation: foxTailWag 0.3s ease-in-out infinite; transform-origin: 10px 34px; }
+#foxChar.fox-walk  #foxTail  { animation: foxTailWag 0.6s ease-in-out infinite; transform-origin: 10px 34px; }
+#foxChar.fox-worried #foxTail { animation: foxTailDroop 1s ease-in-out infinite; transform-origin: 10px 34px; }
+
 /* ── FEST CHIPS (comparison chart) ── */
 .fest-chips { display: flex; gap: 6px; margin: 8px 0 4px; flex-wrap: wrap; }
 .fest-chip {
@@ -864,7 +892,7 @@ body::before {
   <div class="error-bar" id="errorBar"></div>
 
   <!-- TOPBAR -->
-  <div class="topbar">
+  <div class="topbar" style="position:relative;overflow:hidden">
     <div class="topbar-left">
       <div class="dash-title"><span style="color:var(--accent)">FEST</span><span style="font-family:'Outfit';font-weight:300;font-size:2.4rem;color:var(--text);letter-spacing:0.02em;vertical-align:baseline">Dash</span></div>
       <div class="festival-badge" id="topFestBadge">—</div>
@@ -873,6 +901,58 @@ body::before {
       <div class="live-badge"><span class="live-dot"></span><span id="lastUpdated">—</span></div>
       <button class="icon-btn" onclick="loadData()">↻ REFRESH</button>
       <button class="icon-btn" onclick="openSettings()">⚙ SETTINGS</button>
+    </div>
+    <!-- FOX CHARACTER -->
+    <div id="foxWrap" style="position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden">
+      <div id="foxChar" style="position:absolute;bottom:4px;will-change:transform">
+        <div id="foxMood" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:0.55rem;font-family:'JetBrains Mono',monospace;color:rgba(255,180,80,0.85);white-space:nowrap;letter-spacing:0.05em;opacity:0;transition:opacity 0.5s" id="foxMoodLabel"></div>
+        <svg id="foxSvg" width="54" height="48" viewBox="0 0 54 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <!-- Tail -->
+          <ellipse id="foxTail" cx="10" cy="34" rx="10" ry="7" fill="#f97316" transform="rotate(-20 10 34)"/>
+          <ellipse cx="6" cy="37" rx="5" ry="4" fill="white" transform="rotate(-20 6 37)"/>
+          <!-- Body -->
+          <ellipse cx="28" cy="34" rx="14" ry="10" fill="#f97316"/>
+          <!-- Belly -->
+          <ellipse cx="30" cy="36" rx="8" ry="6" fill="#fed7aa"/>
+          <!-- Head -->
+          <ellipse cx="40" cy="24" rx="11" ry="10" fill="#f97316"/>
+          <!-- Left Ear -->
+          <polygon points="32,16 28,6 36,14" fill="#f97316"/>
+          <polygon points="33,15 30,8 35,14" fill="#fda4af"/>
+          <!-- Right Ear -->
+          <polygon points="44,15 41,5 48,14" fill="#f97316"/>
+          <polygon points="44,14 42,7 47,13" fill="#fda4af"/>
+          <!-- Snout -->
+          <ellipse cx="48" cy="27" rx="5" ry="4" fill="#fed7aa"/>
+          <!-- Nose -->
+          <ellipse cx="51" cy="26" rx="2" ry="1.5" fill="#1c1c2e"/>
+          <!-- Eye -->
+          <ellipse id="foxEye" cx="43" cy="21" rx="2.5" ry="2.5" fill="#1c1c2e"/>
+          <ellipse cx="43.8" cy="20.2" rx="0.8" ry="0.8" fill="white"/>
+          <!-- Mouth -->
+          <path id="foxMouth" d="M47 29 Q49 31 51 29" stroke="#c2410c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+          <!-- Legs -->
+          <rect id="leg1" x="20" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
+          <rect id="leg2" x="28" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
+          <rect id="leg3" x="35" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
+          <!-- Sweat drops (hidden by default) -->
+          <g id="foxSweat" opacity="0">
+            <ellipse cx="36" cy="13" rx="2" ry="3" fill="#93c5fd" opacity="0.8"/>
+            <ellipse cx="31" cy="10" rx="1.5" ry="2.5" fill="#93c5fd" opacity="0.6"/>
+          </g>
+          <!-- Stars/sparkles (hidden by default) -->
+          <g id="foxSparkle" opacity="0">
+            <text x="30" y="12" font-size="8" fill="#fbbf24">✦</text>
+            <text x="38" y="8" font-size="6" fill="#c8ff00">✦</text>
+          </g>
+          <!-- ZZZ (hidden by default) -->
+          <g id="foxZzz" opacity="0">
+            <text x="44" y="14" font-size="7" fill="#a78bfa" font-family="monospace">z</text>
+            <text x="48" y="10" font-size="9" fill="#a78bfa" font-family="monospace">z</text>
+            <text x="52" y="6" font-size="11" fill="#a78bfa" font-family="monospace">z</text>
+          </g>
+        </svg>
+      </div>
     </div>
   </div>
 
@@ -1611,6 +1691,71 @@ function renderAll(fest) {
   renderSentiment(fest);
   updateFestDropdownColor();
   document.getElementById('topFestBadge').textContent = fest.name || '—';
+  updateFox();
+}
+
+// ─── FOX CHARACTER ────────────────────────────────────────
+function updateFox() {
+  const fox    = document.getElementById('foxChar');
+  const svgEl  = document.getElementById('foxSvg');
+  const label  = document.getElementById('foxMoodLabel');
+  const sweat  = document.getElementById('foxSweat');
+  const spark  = document.getElementById('foxSparkle');
+  const zzz    = document.getElementById('foxZzz');
+  const mouth  = document.getElementById('foxMouth');
+  const eye    = document.getElementById('foxEye');
+  if (!fox) return;
+
+  const b    = appScriptData.budget || {};
+  const dte  = n(b.DTE);
+  const bepP = n(b['BEP__%']) * 100;
+  const soP  = n(b['SO_%'])  * 100;
+
+  // Determine mood
+  let mood = 'walk', moodText = '', showSweat = false, showSpark = false, showZzz = false;
+  let mouthPath = 'M47 29 Q49 31 51 29'; // smile
+  let eyeRy = 2.5; // normal
+
+  if (soP >= 100) {
+    mood = 'celebrate'; moodText = '🎉 SOLD OUT!!'; showSpark = true;
+    mouthPath = 'M46 28 Q49 32 52 28';
+  } else if (dte <= 0) {
+    mood = 'celebrate'; moodText = '🎊 EVENT DAY!'; showSpark = true;
+  } else if (dte <= 3) {
+    mood = 'panic'; moodText = '😱 3 DAYS LEFT!!'; showSweat = true;
+    mouthPath = 'M47 30 Q49 28 51 30'; eyeRy = 3.2;
+  } else if (dte <= 7) {
+    mood = 'panic'; moodText = '🔥 ONE WEEK LEFT'; showSweat = true;
+    mouthPath = 'M47 29 Q49 27 51 29';
+  } else if (dte <= 14) {
+    mood = 'run'; moodText = '⚡ CRUNCH TIME';
+    mouthPath = 'M47 29 Q49 30 51 29';
+  } else if (dte <= 30) {
+    mood = 'trot'; moodText = bepP < 90 ? '😬 Need more tickets' : '👟 On track';
+  } else if (dte > 60) {
+    mood = 'sleep'; moodText = '😴 Event far away'; showZzz = true;
+    mouthPath = 'M48 29 Q49 30 50 29'; eyeRy = 0.5;
+  } else {
+    mood = 'walk';
+    if (bepP >= 100) { moodText = '😊 BEP reached!'; showSpark = true; }
+    else if (bepP < 80) { mood = 'worried'; moodText = '😟 Below BEP'; mouthPath = 'M47 30 Q49 28 51 30'; }
+    else { moodText = '🦊 Steady pace'; }
+  }
+
+  // Apply classes
+  fox.className = 'fox-' + mood;
+  label.textContent = moodText;
+  label.style.opacity = moodText ? '1' : '0';
+  sweat.setAttribute('opacity', showSweat ? '1' : '0');
+  spark.setAttribute('opacity', showSpark ? '1' : '0');
+  zzz.setAttribute('opacity', showZzz ? '1' : '0');
+
+  // Eye + mouth
+  eye.setAttribute('ry', eyeRy);
+  mouth.setAttribute('d', mouthPath);
+
+  // Flip fox to face right (default) or jiggle during panic
+  svgEl.style.transform = mood === 'sleep' ? 'scaleY(-1)' : '';
 }
 
 // ─── TICKETS ────────────────────────────────────────────
