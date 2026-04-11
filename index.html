@@ -1147,16 +1147,19 @@ body::before {
   </div>
   <div class="g3" style="margin-top:18px">
     <div class="card">
-      <div class="card-top-line tl-green"></div>
-      <div class="card-label">Today's Conversions</div>
-      <div class="card-value md" id="kMetaConvToday">—</div>
-      <div class="card-sub">purchases today</div>
-    </div>
-    <div class="card">
-      <div class="card-top-line tl-blue"></div>
-      <div class="card-label">7-Day Avg Conv/Day</div>
-      <div class="card-value md" id="kMetaConvAvg">—</div>
-      <div class="card-sub">conversions per day</div>
+      <div class="card-top-line" style="background:linear-gradient(90deg,#22c55e,#60a5fa)"></div>
+      <div class="card-label" style="text-align:center">CONVERSIONS</div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:60px;padding:2px 0">
+        <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
+          <div class="card-value md" id="kMetaConvToday" style="margin-bottom:0;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:rgba(34,197,94,0.7);letter-spacing:0.1em;font-weight:600;margin-top:3px">TODAY</div>
+        </div>
+        <div style="width:1px;height:45px;background:var(--border2);flex-shrink:0;align-self:center;margin:0 6px"></div>
+        <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
+          <div class="card-value md" id="kMetaConvAvg" style="margin-bottom:0;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:rgba(96,165,250,0.7);letter-spacing:0.1em;font-weight:600;margin-top:3px">7D AVG</div>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
@@ -1720,21 +1723,26 @@ function renderChartDaily(data, todayRow, cur) {
     }
   };
 
-  // Plugin: draw value labels on top of each bar
+  // Plugin: draw value labels inside bottom of each bar, large + white
   const barLabelsPlugin = {
     id: 'barLabels',
     afterDatasetsDraw(chart) {
-      const { ctx, data, scales } = chart;
+      const { ctx, data } = chart;
       ctx.save();
+      const meta = chart.getDatasetMeta(0);
       data.datasets[0].data.forEach((val, i) => {
         if (!val) return;
-        const meta = chart.getDatasetMeta(0);
         const bar = meta.data[i];
         const isToday = i === data.datasets[0].data.length - 1;
-        ctx.fillStyle = isToday ? '#c8ff00' : 'rgba(200,255,0,0.7)';
-        ctx.font = `${isToday ? 'bold ' : ''}10px JetBrains Mono, monospace`;
+        const barHeight = bar.base - bar.y;
+        const fontSize = isToday ? 13 : 11;
+        ctx.font = `bold ${fontSize}px JetBrains Mono, monospace`;
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText(val, bar.x, bar.y - 4);
+        ctx.textBaseline = 'bottom';
+        // Position near bottom of bar (12px from base), but only if bar is tall enough
+        const yPos = barHeight > 20 ? bar.base - 6 : bar.y - 4;
+        ctx.fillText(val, bar.x, yPos);
       });
       ctx.restore();
     }
