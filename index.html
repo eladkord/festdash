@@ -1116,6 +1116,17 @@ body::before {
       <div class="card-label">Total Spend</div>
       <div class="card-value md" id="kMetaSpend">—</div>
       <div class="card-sub">₪ campaign total</div>
+      <div style="margin-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted)">Budget Used</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--accent)" id="kBudgetPct">—</span>
+        </div>
+        <div class="prog-track"><div class="prog-fill pf-purple" id="barBudget" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted)">
+          <span id="kBudgetSpent">—</span>
+          <span id="kBudgetMax">—</span>
+        </div>
+      </div>
     </div>
     <div class="card">
       <div class="card-top-line tl-blue"></div>
@@ -1149,9 +1160,29 @@ body::before {
       <div class="card-value md" id="kMetaCPL">—</div>
       <div class="card-sub">₪ cost per conversion</div>
     </div>
+    <div class="card">
+      <div class="card-top-line tl-yellow"></div>
+      <div class="card-label">Projected Conv Until Event</div>
+      <div class="card-value md" id="kProjConv">—</div>
+      <div class="card-sub">conversions by event date</div>
+    </div>
   </div>
 
   </div><!-- /section-body meta cards -->
+
+  <!-- META TREND CHARTS -->
+  <div class="g2" style="margin-top:18px">
+    <div class="card">
+      <div class="card-top-line tl-blue"></div>
+      <div class="card-label">Daily Spend Trend</div>
+      <div class="chart-container h200"><canvas id="chartMetaSpend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-top-line tl-orange"></div>
+      <div class="card-label">CPL Trend (7-Day)</div>
+      <div class="chart-container h200"><canvas id="chartMetaCPL"></canvas></div>
+    </div>
+  </div>
 
   <!-- META MANUAL INPUT — collapsed by default -->
   <div id="metaManualPanel" style="max-height:0;overflow:hidden;transition:max-height 0.4s ease,opacity 0.3s;opacity:0">
@@ -1831,6 +1862,25 @@ function renderMeta(fest) {
   set('kMetaConvAvg',   convAvg  ? convAvg.toFixed(1) : null);
   set('kMetaCPLToday',  cplTod   ? '₪' + cplTod : null);
   set('kMetaCPL',       cplAvg   ? '₪' + cplAvg : null);
+
+  // Budget progress (from global budget object)
+  const budget = appScriptData.budget || {};
+  const ppcBudgetMax = budget.ppc_budget_total || 0;
+  if (spend && ppcBudgetMax) {
+    const pct = (spend / ppcBudgetMax * 100).toFixed(0);
+    set('kBudgetPct', pct + '%');
+    set('kBudgetSpent', '₪' + spend.toLocaleString());
+    set('kBudgetMax', '₪' + ppcBudgetMax.toLocaleString());
+    const barEl = document.getElementById('barBudget');
+    if (barEl) barEl.style.width = Math.min(pct, 100) + '%';
+  }
+
+  // Projected conversions until event (conv_avg_7d × DTE)
+  const dte = n(document.getElementById('gDTE')?.textContent) || 0;
+  if (convAvg && dte) {
+    const projConv = Math.round(convAvg * dte);
+    set('kProjConv', projConv);
+  }
 
   // Populate manual override inputs with saved values
   if (saved.spend)     document.getElementById('mSpend').value     = saved.spend;
