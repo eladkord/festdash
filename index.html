@@ -1514,8 +1514,6 @@ function renderTickets(fest) {
   }
   document.getElementById('kTotal').textContent = todayCum.toLocaleString();
 
-  document.getElementById('kTodaySub').textContent = 'tickets sold today';
-
   // 7-day avg (past = higher row indices, day offsets decrease downward)
   const d7 = [];
   for (let i = todayRow; i <= Math.min(data.length-1, todayRow+6); i++) {
