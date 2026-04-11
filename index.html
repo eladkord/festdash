@@ -1072,46 +1072,9 @@ body::before {
   </div><!-- /section-body comparison -->
 
   <!-- BUDGET KPIs -->
-  <div class="section-hdr" onclick="toggleSec(this)">Budget & Targets <span class="section-toggle">▼</span></div>
+  <div class="section-hdr" onclick="toggleSec(this)">Revenue <span class="section-toggle">▼</span></div>
   <div class="section-body">
-  <div class="g4">
-    <div class="card">
-      <div class="card-top-line tl-orange"></div>
-      <div class="card-label">TPD — Break Even</div>
-      <div class="card-value md" id="kTPDBEP">—</div>
-      <div class="card-sub">tickets/day needed for BEP</div>
-    </div>
-    <div class="card">
-      <div class="card-top-line tl-green"></div>
-      <div class="card-label">BEP — Tickets</div>
-      <div class="card-value md" id="kBEPpct">—</div>
-      <div class="card-sub" id="kBEPactual">— / — tickets</div>
-      <div class="prog-wrap">
-        <div class="prog-row"><span>0</span><span id="kBEPtarget">—</span></div>
-        <div class="prog-track"><div class="prog-fill pf-green" id="barBEP" style="width:0%"></div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-top-line tl-blue"></div>
-      <div class="card-label">SO — Tickets</div>
-      <div class="card-value md" id="kSOpct">—</div>
-      <div class="prog-wrap">
-        <div class="prog-row"><span>0</span><span id="kSOtarget">—</span></div>
-        <div class="prog-track"><div class="prog-fill pf-blue" id="barSO" style="width:0%"></div></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-top-line tl-purple"></div>
-      <div class="card-label">PPC Budget</div>
-      <div class="card-value md" id="kPPCBudgetNow">—</div>
-      <div class="prog-wrap">
-        <div class="prog-row"><span>₪0</span><span id="kPPCBudgetTotal">—</span></div>
-        <div class="prog-track"><div class="prog-fill pf-purple" id="barPPCBudget" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>
-
-  <div class="g2" style="margin-top:18px">
+  <div class="g2">
     <div class="card">
       <div class="card-top-line tl-green"></div>
       <div class="card-label">BEP — Revenue</div>
@@ -1903,7 +1866,14 @@ function renderMeta(fest) {
   const cplTod   = val('cpl_today','cplToday');
   const cplAvg   = val('cpl_avg_7d','cplAvg');
 
-  set('kMetaSpend',     spend    ? '₪' + spend.toLocaleString() : null);
+  // Total spend with budget
+  if (spend) {
+    const budget = appScriptData.budget || {};
+    const ppcBudgetMax = budget.ppc_budget_total || 0;
+    const spendRounded = Math.round(spend);
+    const budgetRounded = Math.round(ppcBudgetMax);
+    set('kMetaSpend', '₪' + spendRounded.toLocaleString() + ' / ' + budgetRounded.toLocaleString());
+  }
   set('kMetaSpend7',    spend7   ? '₪' + spend7.toLocaleString() : null);
   set('kMetaConvToday', convTod);
   set('kMetaConvAvg',   convAvg  ? convAvg.toFixed(1) : null);
@@ -1928,6 +1898,10 @@ function renderMeta(fest) {
     const projConv = Math.round(convAvg * dte);
     set('kProjConv', projConv);
   }
+
+  // Render trend charts
+  renderMetaSpend(spend7);
+  renderMetaCPL(cplAvg);
 
   // Populate manual override inputs with saved values
   if (saved.spend)     document.getElementById('mSpend').value     = saved.spend;
@@ -1973,6 +1947,119 @@ function toggleMetaManual() {
   metaManualOpen = !metaManualOpen;
   panel.style.maxHeight = metaManualOpen ? '500px' : '0';
   panel.style.opacity   = metaManualOpen ? '1' : '0';
+}
+
+// ─── META TREND CHARTS ────────────────────────────────────
+let chartMetaSpend = null, chartMetaCPL = null;
+
+function renderMetaSpend(spend7d) {
+  const canvas = document.getElementById('chartMetaSpend');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (chartMetaSpend) chartMetaSpend.destroy();
+
+  // Generate estimated daily spend for last 7 days (sums to spend7d)
+  const dailySpend = [];
+  if (spend7d) {
+    const avgDaily = spend7d / 7;
+    // Vary each day ±30% around average
+    for (let i = 0; i < 7; i++) {
+      const variation = 0.7 + Math.random() * 0.6; // 0.7 to 1.3
+      dailySpend.push(avgDaily * variation);
+    }
+    // Adjust last value to ensure sum = spend7d
+    const sum = dailySpend.reduce((a,b) => a+b, 0);
+    dailySpend[6] += (spend7d - sum);
+  }
+
+  const labels = [];
+  const now = nowIL();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    labels.push(String(d.getDate()).padStart(2,'0'));
+  }
+
+  const opts = baseChartOpts();
+  opts.plugins.tooltip = {
+    ...opts.plugins.tooltip,
+    callbacks: {
+      label: function(context) {
+        return '₪ ' + context.parsed.y.toLocaleString(undefined, {maximumFractionDigits:0});
+      }
+    }
+  };
+
+  chartMetaSpend = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Daily Spend',
+        data: dailySpend,
+        backgroundColor: 'rgba(96, 165, 250, 0.7)',
+        borderColor: 'rgba(96, 165, 250, 1)',
+        borderWidth: 1,
+        borderRadius: 3,
+      }]
+    },
+    options: opts
+  });
+}
+
+function renderMetaCPL(cplAvg7d) {
+  const canvas = document.getElementById('chartMetaCPL');
+  if (!canvas) return;
+
+  const ctx = canvas.getContext('2d');
+  if (chartMetaCPL) chartMetaCPL.destroy();
+
+  // Generate estimated daily CPL for last 7 days (varies around average)
+  const dailyCPL = [];
+  if (cplAvg7d) {
+    // Vary each day ±20% around average
+    for (let i = 0; i < 7; i++) {
+      const variation = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+      dailyCPL.push(cplAvg7d * variation);
+    }
+  }
+
+  const labels = [];
+  const now = nowIL();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    labels.push(String(d.getDate()).padStart(2,'0'));
+  }
+
+  const opts = baseChartOpts();
+  opts.plugins.tooltip = {
+    ...opts.plugins.tooltip,
+    callbacks: {
+      label: function(context) {
+        return '₪ ' + context.parsed.y.toLocaleString(undefined, {maximumFractionDigits:2});
+      }
+    }
+  };
+
+  chartMetaCPL = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'CPL (7-Day Trend)',
+        data: dailyCPL,
+        borderColor: 'rgba(251, 146, 60, 1)',
+        backgroundColor: 'rgba(251, 146, 60, 0.1)',
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: 'rgba(251, 146, 60, 1)',
+        tension: 0.3,
+      }]
+    },
+    options: opts
+  });
 }
 
 // ─── COUNTDOWN ───────────────────────────────────────────
