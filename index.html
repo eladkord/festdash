@@ -643,6 +643,12 @@ body::before {
   line-height: 1;
 }
 .glance-sep { width: 1px; height: 36px; background: var(--border2); flex-shrink: 0; }
+.glance-avg-block { flex: 1.2; }
+.glance-avg-row { display: flex; align-items: flex-start; justify-content: center; gap: 0; }
+.glance-avg-half { flex: 1; text-align: center; }
+.glance-avg-divider { width: 1px; height: 32px; background: var(--border2); margin: 4px 6px 0; flex-shrink: 0; }
+.glance-avg-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--muted2); letter-spacing: 0.12em; margin-top: 1px; }
+.glance-val-sm { font-size: 1.7rem !important; }
 
 /* ── EXPAND ROW ── */
 .expand-row {
@@ -870,22 +876,7 @@ body::before {
 
   <!-- QUICK GLANCE BAR -->
   <div class="glance-bar" id="glanceBar">
-    <!-- Row 1: Live state -->
-    <div class="glance-row">
-      <div class="glance-item"><div class="glance-label">Today</div><div class="glance-val" id="gToday">—</div></div>
-      <div class="glance-sep"></div>
-      <div class="glance-item glance-wide">
-        <div class="glance-label">Now / SO</div>
-        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
-        <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
-        <div class="glance-so-remain" id="gSOremain">—</div>
-      </div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">7-Day Avg</div><div class="glance-val" id="gAvg7">—</div></div>
-    </div>
-    <!-- Row 2: Targets & projections -->
+    <!-- Row 1: Projected | NOW/SO graph (big) | To BEP -->
     <div class="glance-row">
       <div class="glance-item">
         <div class="glance-label">Projected</div>
@@ -893,9 +884,35 @@ body::before {
         <div class="glance-compare" id="gCompare"></div>
       </div>
       <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">BEP</div><div class="glance-val" id="gBEP">—</div></div>
+      <div class="glance-item glance-wide">
+        <div class="glance-label">Now / SO</div>
+        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
+        <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
+      </div>
       <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">TPD for SO</div><div class="glance-val" id="gTPD">—</div></div>
+      <div class="glance-item">
+        <div class="glance-label">To BEP</div>
+        <div class="glance-val" id="gBEPremain">—</div>
+      </div>
+    </div>
+    <!-- Row 2: SO% | BEP% | AVG 7+14 | TPD BEP | TPD SO -->
+    <div class="glance-row">
+      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">BEP %</div><div class="glance-val" id="gBEP">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item glance-avg-block">
+        <div class="glance-label">AVG</div>
+        <div class="glance-avg-row">
+          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg7">—</div><div class="glance-avg-sub">7</div></div>
+          <div class="glance-avg-divider"></div>
+          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg14">—</div><div class="glance-avg-sub">14</div></div>
+        </div>
+      </div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">TPD BEP</div><div class="glance-val" id="gTPDBEP">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">TPD SO</div><div class="glance-val" id="gTPDSO">—</div></div>
     </div>
   </div>
   <div class="expand-row" onclick="toggleDetails()">
@@ -929,15 +946,15 @@ body::before {
     </div>
     <div class="card">
       <div class="card-top-line tl-green"></div>
-      <div class="card-label">7-Day Avg / Day</div>
+      <div class="card-label">Daily Avg</div>
       <div class="card-value" id="kAvg7">—</div>
-      <div class="card-sub">tickets per day (last 7)</div>
+      <div class="card-sub">7d avg &nbsp;·&nbsp; 14d: <span id="kAvg14">—</span></div>
     </div>
     <div class="card">
-      <div class="card-top-line tl-purple"></div>
-      <div class="card-label">14-Day Avg / Day</div>
-      <div class="card-value" id="kAvg14">—</div>
-      <div class="card-sub">tickets per day (last 14)</div>
+      <div class="card-top-line tl-orange"></div>
+      <div class="card-label">vs DB25 Nov</div>
+      <div class="card-value" id="kFestCompPct">—</div>
+      <div class="card-sub" id="kFestCompTickets">— tickets</div>
     </div>
   </div>
 
@@ -998,12 +1015,6 @@ body::before {
   <div class="section-body">
   <div class="g4">
     <div class="card">
-      <div class="card-top-line tl-yellow"></div>
-      <div class="card-label">TPD — Sold Out</div>
-      <div class="card-value md" id="kTPDSO">—</div>
-      <div class="card-sub">tickets/day needed for SO</div>
-    </div>
-    <div class="card">
       <div class="card-top-line tl-orange"></div>
       <div class="card-label">TPD — Break Even</div>
       <div class="card-value md" id="kTPDBEP">—</div>
@@ -1013,6 +1024,7 @@ body::before {
       <div class="card-top-line tl-green"></div>
       <div class="card-label">BEP — Tickets</div>
       <div class="card-value md" id="kBEPpct">—</div>
+      <div class="card-sub" id="kBEPactual">— / — tickets</div>
       <div class="prog-wrap">
         <div class="prog-row"><span>0</span><span id="kBEPtarget">—</span></div>
         <div class="prog-track"><div class="prog-fill pf-green" id="barBEP" style="width:0%"></div></div>
@@ -1026,6 +1038,12 @@ body::before {
         <div class="prog-row"><span>0</span><span id="kSOtarget">—</span></div>
         <div class="prog-track"><div class="prog-fill pf-blue" id="barSO" style="width:0%"></div></div>
       </div>
+    </div>
+    <div class="card">
+      <div class="card-top-line tl-purple"></div>
+      <div class="card-label">PPC Budget</div>
+      <div class="card-value md" id="kPPCBudget">—</div>
+      <div class="card-sub">₪ total PPC campaign budget</div>
     </div>
   </div>
 
@@ -1291,20 +1309,53 @@ function findTodayRow(data, fest) {
 }
 
 // ═══════════════════════════════════════════════════════
+// CACHE HELPERS
+// ═══════════════════════════════════════════════════════
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
+function saveCache(fest, data) {
+  try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+function loadCache(fest) {
+  try {
+    const raw = localStorage.getItem(cacheKey(fest));
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return { data, ageMs: Date.now() - ts };
+  } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════════════════
 // LOAD DATA
 // ═══════════════════════════════════════════════════════
 async function loadData() {
   const fest = festivals[activeFest];
   if (!fest || !fest.appsScriptUrl) return;
-  showLoading('Fetching feed sheet...');
+
+  // 1. Show cached data instantly if available
+  const cached = loadCache(fest);
+  if (cached) {
+    appScriptData = cached.data;
+    renderAll(fest);
+    const ageMin = Math.round(cached.ageMs / 60000);
+    document.getElementById('lastUpdated').textContent =
+      'cached ' + (ageMin < 1 ? '<1' : ageMin) + 'm ago — refreshing…';
+  } else {
+    showLoading('Fetching feed sheet...');
+  }
+
+  // 2. Fetch fresh in background
   try {
     appScriptData = await fetchAppScript(fest.appsScriptUrl, fest.name);
+    saveCache(fest, appScriptData);
     renderAll(fest);
     document.getElementById('lastUpdated').textContent =
       nowIL().toLocaleTimeString('en-IL',{hour:'2-digit',minute:'2-digit'}) + ' IL';
     hideError();
   } catch(e) {
-    showError('Could not load sheet: ' + e.message + '. Check the Apps Script URL in Settings.');
+    if (!cached) showError('Could not load sheet: ' + e.message + '. Check the Apps Script URL in Settings.');
+    // if we have cached data, stay silent on error
   }
   hideLoading();
 }
@@ -1373,12 +1424,26 @@ function renderTickets(fest) {
     else { badge.className='badge badge-neutral'; badge.textContent=`— vs ${yLabel}`; }
   }
 
-  // Badge vs weekly avg
+  // Badge vs weekly avg (show actual avg value)
   const avgBadge = document.getElementById('kAvgBadge');
   const avgDiff = Math.round(todayDelta - avg7);
-  if (avgDiff > 0) { avgBadge.className='badge badge-up'; avgBadge.textContent=`▲ ${avgDiff} vs 7d avg`; }
-  else if (avgDiff < 0) { avgBadge.className='badge badge-down'; avgBadge.textContent=`▼ ${Math.abs(avgDiff)} vs 7d avg`; }
-  else { avgBadge.className='badge badge-neutral'; avgBadge.textContent='— on 7d avg'; }
+  if (avgDiff > 0) { avgBadge.className='badge badge-up'; avgBadge.textContent=`▲ ${avgDiff} vs avg ${avg7}`; }
+  else if (avgDiff < 0) { avgBadge.className='badge badge-down'; avgBadge.textContent=`▼ ${Math.abs(avgDiff)} vs avg ${avg7}`; }
+  else { avgBadge.className='badge badge-neutral'; avgBadge.textContent=`— on avg ${avg7}`; }
+
+  // Festival comparison vs DB25 Nov (previous festival, index 2)
+  const prevEvt = FEED.tickets.events[2];
+  const prevCumComp = n(data[todayRow]?.[prevEvt.cumCol]);
+  const festCompPct = document.getElementById('kFestCompPct');
+  const festCompTix = document.getElementById('kFestCompTickets');
+  if (prevCumComp > 0 && todayCum > 0) {
+    const pctDiff = ((todayCum - prevCumComp) / prevCumComp * 100);
+    const tickDiff = todayCum - prevCumComp;
+    festCompPct.textContent = (pctDiff >= 0 ? '+' : '') + pctDiff.toFixed(1) + '%';
+    festCompPct.style.color = pctDiff >= 0 ? 'var(--green)' : 'var(--red)';
+    festCompTix.textContent = (tickDiff >= 0 ? '+' : '') + tickDiff.toLocaleString() + ' tickets vs DB25 Nov';
+    festCompTix.style.color = tickDiff >= 0 ? 'var(--green)' : 'var(--red)';
+  }
 
   renderChartDaily(data, todayRow, cur);
   renderChartComp(data, todayRow);
@@ -1561,14 +1626,21 @@ function renderBudget() {
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
 
-  if (tpdSO)  document.getElementById('kTPDSO').textContent  = tpdSO.toFixed(1);
   if (tpdBEP) document.getElementById('kTPDBEP').textContent = tpdBEP.toFixed(1);
 
   if (pctBEPt) {
     document.getElementById('kBEPpct').textContent = pctBEPt.toFixed(1) + '%';
     document.getElementById('barBEP').style.width = Math.min(pctBEPt,100) + '%';
     document.getElementById('kBEPtarget').textContent = tickBEP ? Math.round(tickBEP).toLocaleString() : '—';
+    if (tickCur && tickBEP) {
+      document.getElementById('kBEPactual').textContent =
+        Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickBEP).toLocaleString() + ' tickets';
+    }
   }
+
+  // PPC budget (C25)
+  const ppcBudget = n(b.ppc_budget);
+  if (ppcBudget) document.getElementById('kPPCBudget').textContent = '₪' + Math.round(ppcBudget).toLocaleString();
   if (pctSOt) {
     document.getElementById('kSOpct').textContent = pctSOt.toFixed(1) + '%';
     document.getElementById('barSO').style.width = Math.min(pctSOt,100) + '%';
@@ -1852,19 +1924,11 @@ function renderGlance(fest) {
   const soTarget = tickCur + tickSOremaining; // total capacity
   const dte = n(b.DTE);
 
-  // Today
-  document.getElementById('gToday').textContent = todayDelta;
-
   // Now / SO
   document.getElementById('gSOnum').textContent = todayCum.toLocaleString() + ' / ' + soTarget.toLocaleString();
   const soPct = soTarget ? (todayCum / soTarget * 100) : 0;
   document.getElementById('gSOpct').textContent = soPct.toFixed(1) + '%';
   document.getElementById('gSObar').style.width = Math.min(soPct, 100) + '%';
-  const remaining = soTarget - todayCum;
-  document.getElementById('gSOremain').textContent = remaining > 0 ? remaining.toLocaleString() + ' to SO' : 'SOLD OUT';
-
-  // 7-day avg
-  document.getElementById('gAvg7').textContent = document.getElementById('kAvg7').textContent;
 
   // Projected: tickets_now + avg7 * DTE
   const avg7val = parseInt(document.getElementById('kAvg7').textContent.replace(/,/g,'')) || 0;
@@ -1888,10 +1952,29 @@ function renderGlance(fest) {
     compareEl.textContent = '';
   }
 
-  // BEP
+  // BEP %
   document.getElementById('gBEP').textContent = (n(b['BEP__%']) * 100).toFixed(1) + '%';
-  // TPD for SO
-  document.getElementById('gTPD').textContent = n(b.TPD_SO).toFixed(1);
+
+  // Tickets remaining for BEP (green + minus when reached)
+  const tickBEP = n(b.tickets_BEP);
+  const bepRemaining = tickBEP - tickCur;
+  const bepEl = document.getElementById('gBEPremain');
+  if (bepRemaining > 0) {
+    bepEl.textContent = bepRemaining.toLocaleString();
+    bepEl.style.color = '';
+  } else {
+    bepEl.textContent = bepRemaining.toLocaleString(); // already negative
+    bepEl.style.color = 'var(--green)';
+  }
+
+  // AVG 7 and 14 in glance bar
+  document.getElementById('gAvg7').textContent = avg7val.toLocaleString();
+  const avg14val = parseInt(document.getElementById('kAvg14').textContent.replace(/,/g,'')) || 0;
+  document.getElementById('gAvg14').textContent = avg14val.toLocaleString();
+
+  // TPD SO and BEP
+  document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? n(b.TPD_SO).toFixed(1) : '—';
+  document.getElementById('gTPDBEP').textContent = n(b.TPD_BEP) ? n(b.TPD_BEP).toFixed(1) : '—';
 }
 
 function toggleDetails() {
