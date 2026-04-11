@@ -1199,6 +1199,7 @@ body::before {
       <div class="meta-field"><label>Today's CPL (₪)</label><input type="number" id="mCPLToday" placeholder="e.g. 60" /></div>
       <div class="meta-field"><label>7-Day Avg CPL (₪)</label><input type="number" id="mCPLAvg" placeholder="e.g. 89" /></div>
       <div class="meta-field"><label>Last 7-Day Spend (₪)</label><input type="number" id="mSpend7" placeholder="e.g. 2219" /></div>
+      <div class="meta-field"><label>Max PPC Budget (₪)</label><input type="number" id="mMaxBudget" placeholder="e.g. 45000" /></div>
     </div>
     <div style="display:flex;gap:10px;margin-top:14px">
       <button class="save-meta-btn" onclick="saveMeta()">SAVE & OVERRIDE →</button>
@@ -1719,6 +1720,26 @@ function renderChartDaily(data, todayRow, cur) {
     }
   };
 
+  // Plugin: draw value labels on top of each bar
+  const barLabelsPlugin = {
+    id: 'barLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, data, scales } = chart;
+      ctx.save();
+      data.datasets[0].data.forEach((val, i) => {
+        if (!val) return;
+        const meta = chart.getDatasetMeta(0);
+        const bar = meta.data[i];
+        const isToday = i === data.datasets[0].data.length - 1;
+        ctx.fillStyle = isToday ? '#c8ff00' : 'rgba(200,255,0,0.7)';
+        ctx.font = `${isToday ? 'bold ' : ''}10px JetBrains Mono, monospace`;
+        ctx.textAlign = 'center';
+        ctx.fillText(val, bar.x, bar.y - 4);
+      });
+      ctx.restore();
+    }
+  };
+
   chartDaily = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -1732,7 +1753,8 @@ function renderChartDaily(data, todayRow, cur) {
         borderRadius: 3,
       }]
     },
-    options: opts
+    options: opts,
+    plugins: [barLabelsPlugin],
   });
   // Also update table if visible
   renderDailyTable(data, todayRow, cur);
@@ -1963,9 +1985,9 @@ function renderMeta(fest) {
   const cplTod   = val('cpl_today','cplToday');
   const cplAvg   = val('cpl_avg_7d','cplAvg');
 
-  // Total spend with budget — ppc_budget_total from API, fallback to ppc_budget (C25)
+  // Total spend with budget — manual override > API ppc_budget_total > ppc_budget fallback
   const budget = appScriptData.budget || {};
-  const ppcBudgetMax = n(budget.ppc_budget_total) || n(budget.ppc_budget) || 0;
+  const ppcBudgetMax = n(saved.maxBudget) || n(budget.ppc_budget_total) || n(budget.ppc_budget) || 0;
   if (spend) {
     const spendRounded = Math.round(spend);
     const budgetRounded = Math.round(ppcBudgetMax);
@@ -2006,7 +2028,8 @@ function renderMeta(fest) {
   if (saved.convAvg)   document.getElementById('mConvAvg').value   = saved.convAvg;
   if (saved.cplToday)  document.getElementById('mCPLToday').value   = saved.cplToday;
   if (saved.cplAvg)    document.getElementById('mCPLAvg').value    = saved.cplAvg;
-  if (saved.spend7)    document.getElementById('mSpend7').value    = saved.spend7;
+  if (saved.spend7)     document.getElementById('mSpend7').value     = saved.spend7;
+  if (saved.maxBudget)  document.getElementById('mMaxBudget').value  = saved.maxBudget;
 
   // Show indicator if manual override is active
   const hasOverride = Object.values(saved).some(v => v);
@@ -2024,6 +2047,7 @@ function saveMeta() {
     cplToday:  document.getElementById('mCPLToday').value,
     cplAvg:    document.getElementById('mCPLAvg').value,
     spend7:    document.getElementById('mSpend7').value,
+    maxBudget: document.getElementById('mMaxBudget').value,
   };
   localStorage.setItem('meta_' + (fest?.name||''), JSON.stringify(data));
   renderMeta(fest);
@@ -2032,7 +2056,7 @@ function saveMeta() {
 function clearMetaOverride() {
   const fest = festivals[activeFest];
   localStorage.removeItem('meta_' + (fest?.name||''));
-  ['mSpend','mConvToday','mConvAvg','mCPLToday','mCPLAvg','mSpend7'].forEach(id => {
+  ['mSpend','mConvToday','mConvAvg','mCPLToday','mCPLAvg','mSpend7','mMaxBudget'].forEach(id => {
     document.getElementById(id).value = '';
   });
   renderMeta(fest);
