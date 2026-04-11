@@ -978,7 +978,7 @@ body::before {
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
-      <div class="fest-chips" id="compChipsCard" style="justify-content:center;margin-bottom:8px"></div>
+      <div class="card-label">LETS COMPARE</div>
       <div style="margin-bottom:12px;text-align:center;position:relative">
         <div style="display:inline-block;position:relative">
           <button id="festCompDropdown" onclick="toggleFestDropdown(event)" style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:6px 14px;border-radius:6px;border:none;background:rgba(255,140,0,0.25);color:#fff;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px">
@@ -1279,34 +1279,15 @@ function updateFestDropdownColor() {
   });
 }
 function renderCompChipsCard() {
-  const container = document.getElementById('compChipsCard');
   const dropdownContainer = document.getElementById('dropdownChips');
-  if (!container || !dropdownContainer) return;
+  if (!dropdownContainer) return;
 
-  container.innerHTML = '';
   dropdownContainer.innerHTML = '';
 
-  // Latest first
+  // Show all festivals except current one
   const reversed = FEED.tickets.events.map((ev, idx) => ({ev, idx})).reverse();
   reversed.forEach(({ev, idx}) => {
-    // Card chips (50% size)
-    const cardChip = document.createElement('span');
-    cardChip.className = 'fest-chip' + (idx === comparisonFestIdx ? ' on' : '');
-    cardChip.textContent = ev.name;
-    cardChip.style.fontSize = '0.5rem';
-    cardChip.style.padding = '2px 8px';
-    if (idx === comparisonFestIdx) {
-      cardChip.style.background = hexToRgba(COMP_COLORS[idx], 0.25);
-      cardChip.style.borderColor = COMP_COLORS[idx];
-      cardChip.style.color = '#fff';
-    } else {
-      cardChip.style.background = 'transparent';
-      cardChip.style.borderColor = 'transparent';
-      cardChip.style.color = 'var(--muted)';
-    }
-    cardChip.style.cursor = 'pointer';
-    cardChip.onclick = () => { changeFestComparison(ev.name, idx); };
-    container.appendChild(cardChip);
+    if (idx === FEED.tickets.currentIdx) return; // Skip current festival
 
     // Dropdown chips
     const dropChip = document.createElement('span');
