@@ -338,7 +338,7 @@ body::before {
 .cd-right { margin-left: auto; text-align: right; }
 .cd-event-name { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; color: var(--blue); letter-spacing: 0.1em; }
 .cd-event-date { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--muted2); margin-top: 1px; }
-.cd-campaign-info { font-family: 'JetBrains Mono', monospace; font-size: 0.52rem; color: var(--muted); margin-top: 2px; }
+.cd-campaign-info { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--muted); margin-top: 2px; margin-right: 12px; }
 .cd-num.cd-pale { color: rgba(200,255,0,0.42); text-shadow: none; }
 .cd-num.cd-dim { color: var(--muted); text-shadow: none; }
 .cd-sep.cd-dim { color: var(--border2); }
@@ -718,23 +718,23 @@ body::before {
 .glance-so-row { display: flex; align-items: baseline; justify-content: center; gap: 8px; }
 .glance-so-nums {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 1.15rem;
+  font-size: 2rem;
   color: var(--accent);
   line-height: 1;
   letter-spacing: 0.03em;
 }
 .glance-prog {
-  height: 6px;
+  height: 10px;
   background: var(--s3);
-  border-radius: 3px;
+  border-radius: 5px;
   overflow: hidden;
   margin: 6px 12px 0;
 }
 .glance-prog-fill {
   height: 100%;
-  border-radius: 3px;
+  border-radius: 5px;
   background: linear-gradient(90deg, rgba(200,255,0,0.3), var(--accent));
-  box-shadow: 0 0 8px rgba(200,255,0,0.2);
+  box-shadow: 0 0 12px rgba(200,255,0,0.3);
   transition: width 1s ease;
 }
 .glance-so-remain {
@@ -901,15 +901,6 @@ body::before {
       <div class="glance-sep"></div>
       <div class="glance-item"><div class="glance-label">BEP %</div><div class="glance-val" id="gBEP">—</div></div>
       <div class="glance-sep"></div>
-      <div class="glance-item glance-avg-block">
-        <div class="glance-label">AVG</div>
-        <div class="glance-avg-row">
-          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg7">—</div><div class="glance-avg-sub">7</div></div>
-          <div class="glance-avg-divider"></div>
-          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg14">—</div><div class="glance-avg-sub">14</div></div>
-        </div>
-      </div>
-      <div class="glance-sep"></div>
       <div class="glance-item"><div class="glance-label">TPD BEP</div><div class="glance-val" id="gTPDBEP">—</div></div>
       <div class="glance-sep"></div>
       <div class="glance-item"><div class="glance-label">TPD SO</div><div class="glance-val" id="gTPDSO">—</div></div>
@@ -947,8 +938,18 @@ body::before {
     <div class="card">
       <div class="card-top-line tl-green"></div>
       <div class="card-label">Daily Avg</div>
-      <div class="card-value" id="kAvg7">—</div>
-      <div class="card-sub">7d avg &nbsp;·&nbsp; 14d: <span id="kAvg14">—</span></div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:80px">
+        <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
+          <div class="card-value" id="kAvg7" style="font-size:2.2rem;margin-bottom:4px">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted2);letter-spacing:0.12em">7D</div>
+        </div>
+        <div style="width:1px;height:40px;background:var(--border2);flex-shrink:0;align-self:center"></div>
+        <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
+          <div class="card-value" id="kAvg14" style="font-size:2.2rem;margin-bottom:4px">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted2);letter-spacing:0.12em">14D</div>
+        </div>
+      </div>
+      <div class="card-sub" style="text-align:center;margin-top:8px">tickets per day</div>
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
@@ -1955,22 +1956,15 @@ function renderGlance(fest) {
   // BEP %
   document.getElementById('gBEP').textContent = (n(b['BEP__%']) * 100).toFixed(1) + '%';
 
-  // Tickets remaining for BEP (green + minus when reached)
-  const tickBEP = n(b.tickets_BEP);
-  const bepRemaining = tickBEP - tickCur;
+  // Tickets remaining for BEP (value from C4, green when negative/reached)
+  const bepRemaining = n(b.tickets_BEP); // This is already the remaining value
   const bepEl = document.getElementById('gBEPremain');
-  if (bepRemaining > 0) {
-    bepEl.textContent = bepRemaining.toLocaleString();
-    bepEl.style.color = '';
+  bepEl.textContent = bepRemaining.toLocaleString();
+  if (bepRemaining < 0) {
+    bepEl.style.color = 'var(--green)'; // Green when BEP exceeded
   } else {
-    bepEl.textContent = bepRemaining.toLocaleString(); // already negative
-    bepEl.style.color = 'var(--green)';
+    bepEl.style.color = '';
   }
-
-  // AVG 7 and 14 in glance bar
-  document.getElementById('gAvg7').textContent = avg7val.toLocaleString();
-  const avg14val = parseInt(document.getElementById('kAvg14').textContent.replace(/,/g,'')) || 0;
-  document.getElementById('gAvg14').textContent = avg14val.toLocaleString();
 
   // TPD SO and BEP
   document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? n(b.TPD_SO).toFixed(1) : '—';
