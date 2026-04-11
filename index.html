@@ -400,11 +400,12 @@ body::before {
 
 .card-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.7rem;
+  font-size: 1.16rem;
   color: var(--muted2);
-  letter-spacing: 0.12em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
   margin-bottom: 12px;
+  text-align: center;
 }
 .card-value {
   font-family: 'Bebas Neue', sans-serif;
@@ -890,7 +891,7 @@ body::before {
       <div class="glance-sep"></div>
       <div class="glance-item glance-wide">
         <div class="glance-label">Now / SO</div>
-        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span> <span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-left:4px" id="gSOremain">—</span></div>
+        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span> <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--muted);margin-left:8px" id="gSOremain">—</span></div>
         <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
       </div>
       <div class="glance-sep"></div>
@@ -904,28 +905,28 @@ body::before {
     <div class="glance-row" style="gap:0">
       <!-- SO group -->
       <div style="flex:1;text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;height:18px">SO</div>
+        <div class="glance-label">SO</div>
         <div style="display:flex;justify-content:center;gap:12px;align-items:center">
           <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.55rem">%</div><div class="glance-val" id="gSOpct">—</div>
+            <div class="glance-label" style="font-size:0.65rem">%</div><div class="glance-val" id="gSOpct">—</div>
           </div>
           <div style="width:1px;height:30px;background:var(--border2)"></div>
           <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.55rem">TPD</div><div class="glance-val" id="gTPDSO" style="font-size:1.8rem">—</div>
+            <div class="glance-label" style="font-size:0.65rem">TPD</div><div class="glance-val" id="gTPDSO">—</div>
           </div>
         </div>
       </div>
       <div class="glance-sep"></div>
       <!-- BEP group -->
       <div style="flex:1;text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;height:18px">BEP</div>
+        <div class="glance-label">BEP</div>
         <div style="display:flex;justify-content:center;gap:12px;align-items:center">
           <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.55rem">%</div><div class="glance-val" id="gBEP">—</div>
+            <div class="glance-label" style="font-size:0.65rem">%</div><div class="glance-val" id="gBEP">—</div>
           </div>
           <div style="width:1px;height:30px;background:var(--border2)"></div>
           <div style="text-align:center">
-            <div class="glance-label" style="font-size:0.55rem">TPD</div><div class="glance-val" id="gTPDBEP" style="font-size:1.8rem">—</div>
+            <div class="glance-label" style="font-size:0.65rem">TPD</div><div class="glance-val" id="gTPDBEP">—</div>
           </div>
         </div>
       </div>
@@ -977,7 +978,7 @@ body::before {
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
-      <div class="card-label">vs DB25 Nov</div>
+      <div class="card-label" style="background:rgba(255,140,0,0.15);padding:6px 12px;border-radius:6px;margin:-12px -8px 12px">vs DB25 Nov</div>
       <div class="card-value" id="kFestCompPct">—</div>
       <div class="card-sub" id="kFestCompTickets">— tickets</div>
     </div>
@@ -1414,9 +1415,12 @@ function renderTickets(fest) {
 
   // PPC orders from Meta Ads
   const ppcOrders = n(appScriptData.ads?.conv_today) || 0;
-  document.getElementById('kTodaySales').textContent = ppcOrders
-    ? todayDelta.toLocaleString() + ' (' + ppcOrders + 'PPC)'
-    : todayDelta.toLocaleString();
+  const todaySalesEl = document.getElementById('kTodaySales');
+  if (ppcOrders) {
+    todaySalesEl.innerHTML = todayDelta.toLocaleString() + ' <span style="font-size:0.5em;color:var(--muted)">(' + ppcOrders + 'PPC)</span>';
+  } else {
+    todaySalesEl.textContent = todayDelta.toLocaleString();
+  }
   document.getElementById('kTotal').textContent = todayCum.toLocaleString();
 
   document.getElementById('kTodaySub').textContent = 'tickets sold today';
@@ -2005,9 +2009,9 @@ function renderGlance(fest) {
   }
   document.getElementById('gBEPproj').textContent = projText;
 
-  // TPD SO and BEP
-  document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? n(b.TPD_SO).toFixed(1) : '—';
-  document.getElementById('gTPDBEP').textContent = n(b.TPD_BEP) ? n(b.TPD_BEP).toFixed(1) : '—';
+  // TPD SO and BEP (no decimals)
+  document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? Math.round(n(b.TPD_SO)).toLocaleString() : '—';
+  document.getElementById('gTPDBEP').textContent = n(b.TPD_BEP) ? Math.round(n(b.TPD_BEP)).toLocaleString() : '—';
 }
 
 function toggleDetails() {
