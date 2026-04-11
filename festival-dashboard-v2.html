@@ -643,6 +643,12 @@ body::before {
   line-height: 1;
 }
 .glance-sep { width: 1px; height: 36px; background: var(--border2); flex-shrink: 0; }
+.glance-avg-block { flex: 1.2; }
+.glance-avg-row { display: flex; align-items: flex-start; justify-content: center; gap: 0; }
+.glance-avg-half { flex: 1; text-align: center; }
+.glance-avg-divider { width: 1px; height: 32px; background: var(--border2); margin: 4px 6px 0; flex-shrink: 0; }
+.glance-avg-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.55rem; color: var(--muted2); letter-spacing: 0.12em; margin-top: 1px; }
+.glance-val-sm { font-size: 1.7rem !important; }
 
 /* ── EXPAND ROW ── */
 .expand-row {
@@ -870,19 +876,7 @@ body::before {
 
   <!-- QUICK GLANCE BAR -->
   <div class="glance-bar" id="glanceBar">
-    <!-- Row 1: Live state -->
-    <div class="glance-row">
-      <div class="glance-item glance-wide">
-        <div class="glance-label">Now / SO</div>
-        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
-        <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
-      </div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">To SO</div><div class="glance-val" id="gSOremain">—</div></div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
-    </div>
-    <!-- Row 2: Targets & projections -->
+    <!-- Row 1: Projected | NOW/SO graph (big) | To BEP -->
     <div class="glance-row">
       <div class="glance-item">
         <div class="glance-label">Projected</div>
@@ -890,9 +884,35 @@ body::before {
         <div class="glance-compare" id="gCompare"></div>
       </div>
       <div class="glance-sep"></div>
+      <div class="glance-item glance-wide">
+        <div class="glance-label">Now / SO</div>
+        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
+        <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
+      </div>
+      <div class="glance-sep"></div>
+      <div class="glance-item">
+        <div class="glance-label">To BEP</div>
+        <div class="glance-val" id="gBEPremain">—</div>
+      </div>
+    </div>
+    <!-- Row 2: SO% | BEP% | AVG 7+14 | TPD BEP | TPD SO -->
+    <div class="glance-row">
+      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
+      <div class="glance-sep"></div>
       <div class="glance-item"><div class="glance-label">BEP %</div><div class="glance-val" id="gBEP">—</div></div>
       <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">To BEP</div><div class="glance-val" id="gBEPremain">—</div></div>
+      <div class="glance-item glance-avg-block">
+        <div class="glance-label">AVG</div>
+        <div class="glance-avg-row">
+          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg7">—</div><div class="glance-avg-sub">7</div></div>
+          <div class="glance-avg-divider"></div>
+          <div class="glance-avg-half"><div class="glance-val glance-val-sm" id="gAvg14">—</div><div class="glance-avg-sub">14</div></div>
+        </div>
+      </div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">TPD BEP</div><div class="glance-val" id="gTPDBEP">—</div></div>
+      <div class="glance-sep"></div>
+      <div class="glance-item"><div class="glance-label">TPD SO</div><div class="glance-val" id="gTPDSO">—</div></div>
     </div>
   </div>
   <div class="expand-row" onclick="toggleDetails()">
@@ -1289,20 +1309,53 @@ function findTodayRow(data, fest) {
 }
 
 // ═══════════════════════════════════════════════════════
+// CACHE HELPERS
+// ═══════════════════════════════════════════════════════
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
+function saveCache(fest, data) {
+  try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+}
+function loadCache(fest) {
+  try {
+    const raw = localStorage.getItem(cacheKey(fest));
+    if (!raw) return null;
+    const { ts, data } = JSON.parse(raw);
+    if (Date.now() - ts > CACHE_TTL) return null;
+    return { data, ageMs: Date.now() - ts };
+  } catch(e) { return null; }
+}
+
+// ═══════════════════════════════════════════════════════
 // LOAD DATA
 // ═══════════════════════════════════════════════════════
 async function loadData() {
   const fest = festivals[activeFest];
   if (!fest || !fest.appsScriptUrl) return;
-  showLoading('Fetching feed sheet...');
+
+  // 1. Show cached data instantly if available
+  const cached = loadCache(fest);
+  if (cached) {
+    appScriptData = cached.data;
+    renderAll(fest);
+    const ageMin = Math.round(cached.ageMs / 60000);
+    document.getElementById('lastUpdated').textContent =
+      'cached ' + (ageMin < 1 ? '<1' : ageMin) + 'm ago — refreshing…';
+  } else {
+    showLoading('Fetching feed sheet...');
+  }
+
+  // 2. Fetch fresh in background
   try {
     appScriptData = await fetchAppScript(fest.appsScriptUrl, fest.name);
+    saveCache(fest, appScriptData);
     renderAll(fest);
     document.getElementById('lastUpdated').textContent =
       nowIL().toLocaleTimeString('en-IL',{hour:'2-digit',minute:'2-digit'}) + ' IL';
     hideError();
   } catch(e) {
-    showError('Could not load sheet: ' + e.message + '. Check the Apps Script URL in Settings.');
+    if (!cached) showError('Could not load sheet: ' + e.message + '. Check the Apps Script URL in Settings.');
+    // if we have cached data, stay silent on error
   }
   hideLoading();
 }
@@ -1876,8 +1929,6 @@ function renderGlance(fest) {
   const soPct = soTarget ? (todayCum / soTarget * 100) : 0;
   document.getElementById('gSOpct').textContent = soPct.toFixed(1) + '%';
   document.getElementById('gSObar').style.width = Math.min(soPct, 100) + '%';
-  const remaining = soTarget - todayCum;
-  document.getElementById('gSOremain').textContent = remaining > 0 ? remaining.toLocaleString() : 'SOLD OUT';
 
   // Projected: tickets_now + avg7 * DTE
   const avg7val = parseInt(document.getElementById('kAvg7').textContent.replace(/,/g,'')) || 0;
@@ -1904,10 +1955,26 @@ function renderGlance(fest) {
   // BEP %
   document.getElementById('gBEP').textContent = (n(b['BEP__%']) * 100).toFixed(1) + '%';
 
-  // Tickets remaining for BEP
+  // Tickets remaining for BEP (green + minus when reached)
   const tickBEP = n(b.tickets_BEP);
   const bepRemaining = tickBEP - tickCur;
-  document.getElementById('gBEPremain').textContent = bepRemaining > 0 ? bepRemaining.toLocaleString() : 'BEP REACHED';
+  const bepEl = document.getElementById('gBEPremain');
+  if (bepRemaining > 0) {
+    bepEl.textContent = bepRemaining.toLocaleString();
+    bepEl.style.color = '';
+  } else {
+    bepEl.textContent = bepRemaining.toLocaleString(); // already negative
+    bepEl.style.color = 'var(--green)';
+  }
+
+  // AVG 7 and 14 in glance bar
+  document.getElementById('gAvg7').textContent = avg7val.toLocaleString();
+  const avg14val = parseInt(document.getElementById('kAvg14').textContent.replace(/,/g,'')) || 0;
+  document.getElementById('gAvg14').textContent = avg14val.toLocaleString();
+
+  // TPD SO and BEP
+  document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? n(b.TPD_SO).toFixed(1) : '—';
+  document.getElementById('gTPDBEP').textContent = n(b.TPD_BEP) ? n(b.TPD_BEP).toFixed(1) : '—';
 }
 
 function toggleDetails() {
