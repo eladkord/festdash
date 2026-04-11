@@ -890,9 +890,8 @@ body::before {
       <div class="glance-sep"></div>
       <div class="glance-item glance-wide">
         <div class="glance-label">Now / SO</div>
-        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
+        <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span> <span style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--muted);margin-left:4px" id="gSOremain">—</span></div>
         <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px">Remaining: <span id="gSOremain">—</span></div>
       </div>
       <div class="glance-sep"></div>
       <div class="glance-item">
@@ -901,27 +900,33 @@ body::before {
         <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px" id="gBEPproj">—</div>
       </div>
     </div>
-    <!-- Row 2: SO section | BEP section -->
-    <div class="glance-row">
-      <!-- Left: SO -->
+    <!-- Row 2: SO % TPD | BEP % TPD -->
+    <div class="glance-row" style="gap:0">
+      <!-- SO group -->
       <div style="flex:1;text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px">SO</div>
-        <div class="glance-item" style="flex:none">
-          <div class="glance-label" style="font-size:0.58rem">%</div><div class="glance-val" id="gSOpct">—</div>
-        </div>
-        <div class="glance-item" style="flex:none;margin-top:6px">
-          <div class="glance-label" style="font-size:0.58rem">TPD</div><div class="glance-val" id="gTPDSO" style="font-size:1.8rem">—</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;height:18px">SO</div>
+        <div style="display:flex;justify-content:center;gap:12px;align-items:center">
+          <div style="text-align:center">
+            <div class="glance-label" style="font-size:0.55rem">%</div><div class="glance-val" id="gSOpct">—</div>
+          </div>
+          <div style="width:1px;height:30px;background:var(--border2)"></div>
+          <div style="text-align:center">
+            <div class="glance-label" style="font-size:0.55rem">TPD</div><div class="glance-val" id="gTPDSO" style="font-size:1.8rem">—</div>
+          </div>
         </div>
       </div>
       <div class="glance-sep"></div>
-      <!-- Right: BEP -->
+      <!-- BEP group -->
       <div style="flex:1;text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px">BEP</div>
-        <div class="glance-item" style="flex:none">
-          <div class="glance-label" style="font-size:0.58rem">%</div><div class="glance-val" id="gBEP">—</div>
-        </div>
-        <div class="glance-item" style="flex:none;margin-top:6px">
-          <div class="glance-label" style="font-size:0.58rem">TPD</div><div class="glance-val" id="gTPDBEP" style="font-size:1.8rem">—</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;height:18px">BEP</div>
+        <div style="display:flex;justify-content:center;gap:12px;align-items:center">
+          <div style="text-align:center">
+            <div class="glance-label" style="font-size:0.55rem">%</div><div class="glance-val" id="gBEP">—</div>
+          </div>
+          <div style="width:1px;height:30px;background:var(--border2)"></div>
+          <div style="text-align:center">
+            <div class="glance-label" style="font-size:0.55rem">TPD</div><div class="glance-val" id="gTPDBEP" style="font-size:1.8rem">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -958,15 +963,15 @@ body::before {
     <div class="card">
       <div class="card-top-line tl-green"></div>
       <div class="card-label">AVG</div>
-      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:80px;padding:12px 0">
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:60px;padding:2px 0">
         <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
-          <div class="card-value" id="kAvg7" style="font-size:2.8rem;margin-bottom:2px;line-height:1">—</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600">7D</div>
+          <div class="card-value" id="kAvg7" style="font-size:3.4rem;margin-bottom:0;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600;margin-top:1px">7D</div>
         </div>
-        <div style="width:1px;height:50px;background:var(--border2);flex-shrink:0;align-self:center;margin:0 8px"></div>
+        <div style="width:1px;height:45px;background:var(--border2);flex-shrink:0;align-self:center;margin:0 6px"></div>
         <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
-          <div class="card-value" id="kAvg14" style="font-size:2.8rem;margin-bottom:2px;line-height:1">—</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600">14D</div>
+          <div class="card-value" id="kAvg14" style="font-size:3.4rem;margin-bottom:0;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.85rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600;margin-top:1px">14D</div>
         </div>
       </div>
     </div>
@@ -1407,14 +1412,14 @@ function renderTickets(fest) {
   const todayDelta = n(data[todayRow]?.[cur.deltaCol]);
   const todayCum   = n(data[todayRow]?.[cur.cumCol]);
 
-  document.getElementById('kTodaySales').textContent = todayDelta.toLocaleString();
-  document.getElementById('kTotal').textContent = todayCum.toLocaleString();
-
   // PPC orders from Meta Ads
   const ppcOrders = n(appScriptData.ads?.conv_today) || 0;
-  document.getElementById('kTodaySub').textContent = ppcOrders
-    ? `tickets sold today (${ppcOrders} PPC orders)`
-    : 'tickets sold today';
+  document.getElementById('kTodaySales').textContent = ppcOrders
+    ? todayDelta.toLocaleString() + ' (' + ppcOrders + 'PPC)'
+    : todayDelta.toLocaleString();
+  document.getElementById('kTotal').textContent = todayCum.toLocaleString();
+
+  document.getElementById('kTodaySub').textContent = 'tickets sold today';
 
   // 7-day avg (past = higher row indices, day offsets decrease downward)
   const d7 = [];
@@ -1949,9 +1954,9 @@ function renderGlance(fest) {
   const soPct = soTarget ? (todayCum / soTarget * 100) : 0;
   document.getElementById('gSOpct').textContent = soPct.toFixed(1) + '%';
   document.getElementById('gSObar').style.width = Math.min(soPct, 100) + '%';
-  // SO remaining
+  // SO remaining (in parentheses)
   const soRemaining = soTarget - todayCum;
-  document.getElementById('gSOremain').textContent = soRemaining > 0 ? soRemaining.toLocaleString() : '0';
+  document.getElementById('gSOremain').textContent = soRemaining > 0 ? '(' + soRemaining.toLocaleString() + ')' : '(0)';
 
   // Projected: tickets_now + avg7 * DTE
   const avg7val = parseInt(document.getElementById('kAvg7').textContent.replace(/,/g,'')) || 0;
@@ -1983,19 +1988,19 @@ function renderGlance(fest) {
   const bepEl = document.getElementById('gBEPremain');
   bepEl.textContent = Math.round(bepRemaining).toLocaleString(); // No decimals
 
-  // BEP color: green only when exceeded (< 0)
-  if (bepRemaining < 0) {
-    bepEl.style.color = 'var(--green)';
+  // BEP color: green when reached/over (>= 0), default when remaining (< 0)
+  if (bepRemaining >= 0) {
+    bepEl.style.color = 'var(--green)'; // Green when reached/over
   } else {
-    bepEl.style.color = 'var(--accent)'; // Default accent color
+    bepEl.style.color = 'var(--accent)'; // Default accent when remaining
   }
 
-  // BEP projection: days to reach 0
+  // BEP projection: days to reach 0 when remaining (< 0)
   let projText = '';
-  if (bepRemaining > 0 && avg7val > 0) {
-    const daysToZero = Math.ceil(bepRemaining / avg7val);
+  if (bepRemaining < 0 && avg7val > 0) {
+    const daysToZero = Math.ceil(Math.abs(bepRemaining) / avg7val);
     projText = `(${daysToZero}d to BEP)`;
-  } else if (bepRemaining <= 0) {
+  } else if (bepRemaining >= 0) {
     projText = '(REACHED)';
   }
   document.getElementById('gBEPproj').textContent = projText;
