@@ -695,6 +695,24 @@ body::before {
 .range-tab:hover { color: var(--text); }
 .range-tab.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(200,255,0,0.25); }
 
+/* ── COMPARISON ZOOM TABS ── */
+.comp-zoom-tab {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border2);
+  background: var(--s2);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.comp-zoom-tab:hover { color: var(--text); background: var(--s1); }
+.comp-zoom-tab.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(200,255,0,0.25); }
+
 /* ── FEST CHIPS (comparison chart) ── */
 .fest-chips { display: flex; gap: 6px; margin: 8px 0 4px; flex-wrap: wrap; }
 .fest-chip {
@@ -1016,7 +1034,16 @@ body::before {
       <div class="card-top-line tl-purple"></div>
       <div class="card-label">PastFest Comparison</div>
       <div class="fest-chips" id="compChips" style="justify-content:center"></div>
-      <div class="chart-container h280"><canvas id="chartComp"></canvas></div>
+      <div style="position:relative">
+        <div style="position:absolute;left:4px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:4px;z-index:10">
+          <button class="comp-zoom-tab active" data-days="0" onclick="setCompZoom(0)" style="padding:4px 8px;font-size:0.6rem">ALL</button>
+          <button class="comp-zoom-tab" data-days="45" onclick="setCompZoom(45)" style="padding:4px 8px;font-size:0.6rem">45</button>
+          <button class="comp-zoom-tab" data-days="30" onclick="setCompZoom(30)" style="padding:4px 8px;font-size:0.6rem">30</button>
+          <button class="comp-zoom-tab" data-days="15" onclick="setCompZoom(15)" style="padding:4px 8px;font-size:0.6rem">15</button>
+          <button class="comp-zoom-tab" data-days="7" onclick="setCompZoom(7)" style="padding:4px 8px;font-size:0.6rem">7</button>
+        </div>
+        <div class="chart-container h280"><canvas id="chartComp"></canvas></div>
+      </div>
     </div>
   </div>
 
@@ -1268,6 +1295,7 @@ let editingFest = null;
 let authenticated = false;
 let dailyDays = 7; // default chart range
 let compVisible = [0, 1, 2, 3]; // which events visible in comparison
+let compZoomDays = 0; // 0 = ALL, otherwise show last N days
 const COMP_COLORS = ['#6b7280','#a78bfa','#f0abfc','#fbbf24']; // gray, purple, soft pink, warm yellow
 let detailsOpen = true;
 let pinnedCompIdx = null; // index pinned on comparison chart
@@ -1652,7 +1680,20 @@ function renderChartDaily(data, todayRow, cur) {
   });
 }
 
-// ─── CHART: COMPARISON ──────────────────────────────────
+// ─── COMPARISON ZOOM ────────────────────────────────────
+function setCompZoom(days) {
+  compZoomDays = days;
+  // Update active tab
+  document.querySelectorAll('.comp-zoom-tab').forEach(btn => btn.classList.remove('active'));
+  document.querySelector(`.comp-zoom-tab[data-days="${days}"]`)?.classList.add('active');
+  // Re-render chart
+  const fest = festivals[activeFest];
+  const data = appScriptData.tickets;
+  const todayRow = findTodayRow(data, fest);
+  renderChartComp(data, todayRow);
+}
+
+// ─── CHART: COMPARISON ──────────────────────────────────────
 function renderChartComp(data, todayRow) {
   const curOffset = n(data[todayRow]?.[FEED.tickets.dayCol]); // today's day offset (e.g. -17)
   const widths = [1.5, 1.5, 2, 2.5];
@@ -1671,7 +1712,13 @@ function renderChartComp(data, todayRow) {
       if (d <= maxOffset && v > 0) offsetSet.add(d);
     }
   });
-  const masterLabels = [...offsetSet].sort((a, b) => a - b); // ascending (most negative → 0)
+  let masterLabels = [...offsetSet].sort((a, b) => a - b); // ascending (most negative → 0)
+
+  // Filter by zoom days if specified
+  if (compZoomDays > 0) {
+    const minDay = -compZoomDays;
+    masterLabels = masterLabels.filter(d => d >= minDay);
+  }
 
   FEED.tickets.events.forEach((ev, idx) => {
     if (!compVisible.includes(idx)) return;
