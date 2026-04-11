@@ -1813,10 +1813,10 @@ function renderBudget() {
   if (tpdBEP && document.getElementById('kTPDBEP')) document.getElementById('kTPDBEP').textContent = tpdBEP.toFixed(1);
 
   if (pctBEPt) {
-    document.getElementById('kBEPpct').textContent = pctBEPt.toFixed(1) + '%';
-    document.getElementById('barBEP').style.width = Math.min(pctBEPt,100) + '%';
-    document.getElementById('kBEPtarget').textContent = tickBEP ? Math.round(tickBEP).toLocaleString() : '—';
-    if (tickCur && tickBEP) {
+    if (document.getElementById('kBEPpct')) document.getElementById('kBEPpct').textContent = pctBEPt.toFixed(1) + '%';
+    if (document.getElementById('barBEP')) document.getElementById('barBEP').style.width = Math.min(pctBEPt,100) + '%';
+    if (document.getElementById('kBEPtarget')) document.getElementById('kBEPtarget').textContent = tickBEP ? Math.round(tickBEP).toLocaleString() : '—';
+    if (tickCur && tickBEP && document.getElementById('kBEPactual')) {
       document.getElementById('kBEPactual').textContent =
         Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickBEP).toLocaleString() + ' tickets';
     }
@@ -1826,24 +1826,24 @@ function renderBudget() {
   const ppcSpent = n(b.ppc_budget);
   const ppcTotal = n(b.ppc_budget_total);
   if (ppcSpent && ppcTotal) {
-    document.getElementById('kPPCBudgetNow').textContent = '₪' + Math.round(ppcSpent).toLocaleString() + ' / ₪' + Math.round(ppcTotal).toLocaleString();
+    if (document.getElementById('kPPCBudgetNow')) document.getElementById('kPPCBudgetNow').textContent = '₪' + Math.round(ppcSpent).toLocaleString() + ' / ₪' + Math.round(ppcTotal).toLocaleString();
     const ppcPct = (ppcSpent / ppcTotal * 100);
-    document.getElementById('barPPCBudget').style.width = Math.min(ppcPct, 100) + '%';
-    document.getElementById('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
+    if (document.getElementById('barPPCBudget')) document.getElementById('barPPCBudget').style.width = Math.min(ppcPct, 100) + '%';
+    if (document.getElementById('kPPCBudgetTotal')) document.getElementById('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
   }
   if (pctSOt) {
-    document.getElementById('kSOpct').textContent = pctSOt.toFixed(1) + '%';
-    document.getElementById('barSO').style.width = Math.min(pctSOt,100) + '%';
-    document.getElementById('kSOtarget').textContent = tickSO ? Math.round(tickSO).toLocaleString() : '—';
+    if (document.getElementById('kSOpct')) document.getElementById('kSOpct').textContent = pctSOt.toFixed(1) + '%';
+    if (document.getElementById('barSO')) document.getElementById('barSO').style.width = Math.min(pctSOt,100) + '%';
+    if (document.getElementById('kSOtarget')) document.getElementById('kSOtarget').textContent = tickSO ? Math.round(tickSO).toLocaleString() : '—';
   }
   if (pctBEPr) {
-    document.getElementById('kBEPrevPct').textContent = pctBEPr.toFixed(1) + '%';
-    document.getElementById('barBEPrev').style.width = Math.min(pctBEPr,100) + '%';
-    document.getElementById('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
+    if (document.getElementById('kBEPrevPct')) document.getElementById('kBEPrevPct').textContent = pctBEPr.toFixed(1) + '%';
+    if (document.getElementById('barBEPrev')) document.getElementById('barBEPrev').style.width = Math.min(pctBEPr,100) + '%';
+    if (document.getElementById('kBEPrevTarget')) document.getElementById('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
   }
   if (pctSOr) {
-    document.getElementById('kSOrevPct').textContent = pctSOr.toFixed(1) + '%';
-    document.getElementById('barSOrev').style.width = Math.min(pctSOr,100) + '%';
+    if (document.getElementById('kSOrevPct')) document.getElementById('kSOrevPct').textContent = pctSOr.toFixed(1) + '%';
+    if (document.getElementById('barSOrev')) document.getElementById('barSOrev').style.width = Math.min(pctSOr,100) + '%';
   }
 }
 
