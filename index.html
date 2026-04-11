@@ -1810,7 +1810,7 @@ function renderBudget() {
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
 
-  if (tpdBEP) document.getElementById('kTPDBEP').textContent = tpdBEP.toFixed(1);
+  if (tpdBEP && document.getElementById('kTPDBEP')) document.getElementById('kTPDBEP').textContent = tpdBEP.toFixed(1);
 
   if (pctBEPt) {
     document.getElementById('kBEPpct').textContent = pctBEPt.toFixed(1) + '%';
