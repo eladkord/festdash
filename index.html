@@ -630,7 +630,7 @@ body::before {
 .glance-item { text-align: center; flex: 1; }
 .glance-label {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.58rem;
+  font-size: 1.16rem;
   color: var(--muted2);
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -867,10 +867,14 @@ body::before {
     <div class="cd-block"><div class="cd-num cd-pale" id="cdM">—</div><div class="cd-label">Mins</div></div>
     <div class="cd-sep cd-dim">:</div>
     <div class="cd-block"><div class="cd-num cd-dim" id="cdS">—</div><div class="cd-label">Secs</div></div>
-    <div class="cd-right">
-      <div class="cd-event-name" id="cdEventName">—</div>
-      <div class="cd-event-date" id="cdEventDate">—</div>
-      <div class="cd-campaign-info" id="cdCampaignInfo">—</div>
+    <div class="cd-right" style="display:flex;align-items:flex-start;gap:12px">
+      <div style="display:flex;flex-direction:column">
+        <div class="cd-campaign-info" id="cdCampaignInfo">—</div>
+        <div class="cd-event-date" id="cdEventDate">—</div>
+      </div>
+      <div style="display:flex;flex-direction:column;text-align:right">
+        <div class="cd-event-name" id="cdEventName">—</div>
+      </div>
     </div>
   </div>
 
@@ -888,22 +892,38 @@ body::before {
         <div class="glance-label">Now / SO</div>
         <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span></div>
         <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px">Remaining: <span id="gSOremain">—</span></div>
       </div>
       <div class="glance-sep"></div>
       <div class="glance-item">
         <div class="glance-label">To BEP</div>
         <div class="glance-val" id="gBEPremain">—</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px" id="gBEPproj">—</div>
       </div>
     </div>
-    <!-- Row 2: SO% | BEP% | AVG 7+14 | TPD BEP | TPD SO -->
+    <!-- Row 2: SO section | BEP section -->
     <div class="glance-row">
-      <div class="glance-item"><div class="glance-label">SO %</div><div class="glance-val" id="gSOpct">—</div></div>
+      <!-- Left: SO -->
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px">SO</div>
+        <div class="glance-item" style="flex:none">
+          <div class="glance-label" style="font-size:0.58rem">%</div><div class="glance-val" id="gSOpct">—</div>
+        </div>
+        <div class="glance-item" style="flex:none;margin-top:6px">
+          <div class="glance-label" style="font-size:0.58rem">TPD</div><div class="glance-val" id="gTPDSO" style="font-size:1.8rem">—</div>
+        </div>
+      </div>
       <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">BEP %</div><div class="glance-val" id="gBEP">—</div></div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">TPD BEP</div><div class="glance-val" id="gTPDBEP">—</div></div>
-      <div class="glance-sep"></div>
-      <div class="glance-item"><div class="glance-label">TPD SO</div><div class="glance-val" id="gTPDSO">—</div></div>
+      <!-- Right: BEP -->
+      <div style="flex:1;text-align:center">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--muted2);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:8px">BEP</div>
+        <div class="glance-item" style="flex:none">
+          <div class="glance-label" style="font-size:0.58rem">%</div><div class="glance-val" id="gBEP">—</div>
+        </div>
+        <div class="glance-item" style="flex:none;margin-top:6px">
+          <div class="glance-label" style="font-size:0.58rem">TPD</div><div class="glance-val" id="gTPDBEP" style="font-size:1.8rem">—</div>
+        </div>
+      </div>
     </div>
   </div>
   <div class="expand-row" onclick="toggleDetails()">
@@ -937,19 +957,18 @@ body::before {
     </div>
     <div class="card">
       <div class="card-top-line tl-green"></div>
-      <div class="card-label">Daily Avg</div>
-      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:80px">
+      <div class="card-label">AVG</div>
+      <div style="display:flex;align-items:flex-start;justify-content:center;gap:0;height:80px;padding:12px 0">
         <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
-          <div class="card-value" id="kAvg7" style="font-size:2.2rem;margin-bottom:4px">—</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted2);letter-spacing:0.12em">7D</div>
+          <div class="card-value" id="kAvg7" style="font-size:2.8rem;margin-bottom:2px;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600">7D</div>
         </div>
-        <div style="width:1px;height:40px;background:var(--border2);flex-shrink:0;align-self:center"></div>
+        <div style="width:1px;height:50px;background:var(--border2);flex-shrink:0;align-self:center;margin:0 8px"></div>
         <div style="flex:1;text-align:center;display:flex;flex-direction:column;justify-content:center">
-          <div class="card-value" id="kAvg14" style="font-size:2.2rem;margin-bottom:4px">—</div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted2);letter-spacing:0.12em">14D</div>
+          <div class="card-value" id="kAvg14" style="font-size:2.8rem;margin-bottom:2px;line-height:1">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:0.8rem;color:rgba(200,255,0,0.5);letter-spacing:0.12em;font-weight:600">14D</div>
         </div>
       </div>
-      <div class="card-sub" style="text-align:center;margin-top:8px">tickets per day</div>
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
@@ -1930,6 +1949,9 @@ function renderGlance(fest) {
   const soPct = soTarget ? (todayCum / soTarget * 100) : 0;
   document.getElementById('gSOpct').textContent = soPct.toFixed(1) + '%';
   document.getElementById('gSObar').style.width = Math.min(soPct, 100) + '%';
+  // SO remaining
+  const soRemaining = soTarget - todayCum;
+  document.getElementById('gSOremain').textContent = soRemaining > 0 ? soRemaining.toLocaleString() : '0';
 
   // Projected: tickets_now + avg7 * DTE
   const avg7val = parseInt(document.getElementById('kAvg7').textContent.replace(/,/g,'')) || 0;
@@ -1956,15 +1978,27 @@ function renderGlance(fest) {
   // BEP %
   document.getElementById('gBEP').textContent = (n(b['BEP__%']) * 100).toFixed(1) + '%';
 
-  // Tickets remaining for BEP (value from C4, green when negative/reached)
+  // Tickets remaining for BEP (value from C4, green only when < 0)
   const bepRemaining = n(b.tickets_BEP); // This is already the remaining value
   const bepEl = document.getElementById('gBEPremain');
-  bepEl.textContent = bepRemaining.toLocaleString();
+  bepEl.textContent = Math.round(bepRemaining).toLocaleString(); // No decimals
+
+  // BEP color: green only when exceeded (< 0)
   if (bepRemaining < 0) {
-    bepEl.style.color = 'var(--green)'; // Green when BEP exceeded
+    bepEl.style.color = 'var(--green)';
   } else {
-    bepEl.style.color = '';
+    bepEl.style.color = 'var(--accent)'; // Default accent color
   }
+
+  // BEP projection: days to reach 0
+  let projText = '';
+  if (bepRemaining > 0 && avg7val > 0) {
+    const daysToZero = Math.ceil(bepRemaining / avg7val);
+    projText = `(${daysToZero}d to BEP)`;
+  } else if (bepRemaining <= 0) {
+    projText = '(REACHED)';
+  }
+  document.getElementById('gBEPproj').textContent = projText;
 
   // TPD SO and BEP
   document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? n(b.TPD_SO).toFixed(1) : '—';
