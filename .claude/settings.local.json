@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(unzip -o files.zip -d .)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(npx --version)",
+      "WebFetch(domain:script.google.com)",
+      "WebFetch(domain:script.googleusercontent.com)",
+      "Bash(copy \"C:\\\\Claude\\\\FestDash\\\\festival-dashboard-v2.html\" \"C:\\\\Claude\\\\FestDash\\\\index.html\")",
+      "Bash(clasp --version)",
+      "Bash(npm install:*)",
+      "Bash(clasp login:*)",
+      "Read(//c/Users/eladk/**)",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(''''token exists:'''', bool\\(d.get\\(''''token''''\\) or d.get\\(''''access_token''''\\)\\)\\)\")",
+      "Bash(clip)",
+      "Bash(curl -s -X POST https://graph.facebook.com/v19.0/528586394321579/system_user_access_tokens -d app_id=26782164634711439 -d system_user_id=61574371964954 -d scope=ads_read -d set_token_expires_in_60_days=false -d 'access_token=26782164634711439|_Fa6JuOzn6jJaxLH0sACjSgBvoE')",
+      "Bash(clasp push:*)",
+      "Read(//c/c/Claude/FestDash/**)",
+      "Bash(gh run:*)"
+    ]
+  }
+}

@@ -1,0 +1,123 @@
+# FESTIVAL DASHBOARD — FEED SHEET SETUP
+# One tab per festival. All data in one place.
+
+════════════════════════════════════════════════
+STEP 1 — CREATE THE FEED SHEET
+════════════════════════════════════════════════
+1. Create a new blank Google Sheet
+2. Name the file:  "Festival Dashboard Feed"
+3. Rename the first tab to:  DB26APR
+4. For each new festival later, add a new tab (DB27XXX etc)
+
+════════════════════════════════════════════════
+STEP 2 — PASTE THESE FORMULAS INTO TAB: DB26APR
+════════════════════════════════════════════════
+
+--- SECTION 1: TICKET SALES (Columns A–P) ---
+Put this in cell A1. It pulls the ENTIRE sales table automatically.
+
+  A1:
+  =IMPORTRANGE("1NKLkvJrpxZB7KlpIqzdosj0l80VAiaQ0mtdMuUPkxe4","'Festivals SHITTIM'!A1:P200")
+
+  ✅ This fills A1:P200 automatically — do not type anything else in cols A–P.
+  ✅ Click "Allow access" when Google asks.
+
+
+--- SECTION 2: BUDGET KPIs (Columns R–S) ---
+Column R = label, Column S = value pulled from budget sheet.
+Paste each formula in the EXACT cell shown.
+
+  R1:  tickets_current
+  S1:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!B7")
+
+  R2:  tickets_BEP
+  S2:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!B8")
+
+  R3:  tickets_SO
+  S3:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!B9")
+
+  R4:  TPD_SO
+  S4:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A23")
+
+  R5:  TPD_BEP
+  S5:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A24")
+
+  R6:  DTE
+  S6:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!B24")
+
+  R7:  pct_BEP_tickets
+  S7:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A27")
+
+  R8:  pct_SO_tickets
+  S8:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A29")
+
+  R9:  pct_BEP_revenue
+  S9:  =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A28")
+
+  R10: pct_SO_revenue
+  S10: =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!A30")
+
+  R11: revenue_current
+  S11: =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!C7")
+
+  R12: revenue_BEP
+  S12: =IMPORTRANGE("1_h3VRq8HcJ5VUhhF2dZOLF6JiUv0h1xbmqtOJwqOxlk","Dashboard!C8")
+
+
+--- SECTION 3: META ADS (Columns U–V) ---
+Column U = label, Column V = value (you type these manually for now)
+
+  U1:  total_spend          V1: (type spend amount)
+  U2:  conv_today           V2: (today's conversions)
+  U3:  conv_avg_7d          V3: (7-day avg conv/day)
+  U4:  cpl_today            V4: (today's CPL)
+  U5:  cpl_avg_7d           V5: (7-day avg CPL)
+  U6:  spend_7d             V6: (last 7 days spend)
+
+
+════════════════════════════════════════════════
+STEP 3 — VERIFY BUDGET CELL REFERENCES
+════════════════════════════════════════════════
+After pasting, check col S shows the right numbers:
+
+  S1 should be ~1,399  (current tickets sold)
+  S2 should be ~2,000  (BEP ticket target)
+  S3 should be ~2,850  (SO ticket target)
+  S4 should be ~15.42  (TPD for sold out)
+  S5 should be ~13.98  (TPD for BEP)
+  S7 should be ~69.95% (BEP tickets %)
+  S8 should be ~49.09% (SO tickets %)
+
+⚠️ If any values are wrong, the cell references in the Dashboard tab
+   may be different. Screenshot col S and send to Claude to fix.
+
+
+════════════════════════════════════════════════
+STEP 4 — PUBLISH THE FEED SHEET AS CSV
+════════════════════════════════════════════════
+1. File → Share → Publish to web
+2. First dropdown: select "DB26APR" (the tab name)
+3. Second dropdown: select "Comma-separated values (.csv)"
+4. Click Publish
+5. Copy the URL (ends with &output=csv)
+6. Paste into the dashboard Settings panel
+
+
+════════════════════════════════════════════════
+STEP 5 — CONFIGURE THE DASHBOARD
+════════════════════════════════════════════════
+In the dashboard Settings panel, enter:
+  Festival Name:     DB26APR
+  CSV URL:           (the URL from step 4)
+  Event Date:        23/04/2026
+  Sale Launch Date:  07/12/2025
+
+
+════════════════════════════════════════════════
+FOR FUTURE FESTIVALS
+════════════════════════════════════════════════
+1. Add a new tab to the Feed Sheet (e.g. DB27XXX)
+2. Paste the same IMPORTRANGE formulas pointing to the new source sheets
+3. Publish the new tab as CSV
+4. In the dashboard → Settings → "+ New Festival" → paste the new CSV URL
+5. The festival tab will appear in the dashboard automatically

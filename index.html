@@ -418,7 +418,7 @@ body::before {
 .card-value.xl { font-size: 4.4rem; text-shadow: 0 0 40px rgba(226,234,245,0.08); }
 .card-value.md { font-size: 2.8rem; }
 .card-value.sm { font-size: 2rem; }
-.card-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 8px; }
+.card-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--muted); margin-top: 8px; text-align: center; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
@@ -980,8 +980,18 @@ body::before {
     </div>
     <div class="card">
       <div class="card-top-line tl-orange"></div>
-      <div style="background:rgba(255,140,0,0.15);padding:8px 12px;border-radius:6px;margin-bottom:12px;text-align:center">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:1rem;color:var(--muted2);letter-spacing:0.12em;text-transform:uppercase">DB25 NOV</div>
+      <div style="margin-bottom:12px;text-align:center;position:relative">
+        <div style="display:inline-block;position:relative">
+          <button id="festCompDropdown" onclick="toggleFestDropdown(event)" style="font-family:'JetBrains Mono',monospace;font-size:0.7rem;padding:6px 14px;border-radius:6px;border:none;background:rgba(255,140,0,0.25);color:#fff;letter-spacing:0.08em;text-transform:uppercase;font-weight:600;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:6px">
+            <span id="festCompName">DB25 NOV</span>
+            <span style="font-size:0.6rem">▼</span>
+          </button>
+          <div id="festCompDropdownMenu" style="position:absolute;top:100%;left:0;background:var(--s2);border:1px solid var(--border2);border-radius:6px;min-width:120px;display:none;z-index:100;margin-top:4px">
+            <div class="fest-chip on" style="display:block;padding:6px 10px;cursor:pointer;border:none;background:transparent;text-align:left;margin:0;border-radius:0" onclick="changeFestComparison('DB25 NOV', 2)">DB25 NOV</div>
+            <div class="fest-chip" style="display:block;padding:6px 10px;cursor:pointer;border:none;background:transparent;text-align:left;margin:0;border-radius:0" onclick="changeFestComparison('DB25 MAY', 1)">DB25 MAY</div>
+            <div class="fest-chip" style="display:block;padding:6px 10px;cursor:pointer;border:none;background:transparent;text-align:left;margin:0;border-radius:0" onclick="changeFestComparison('DB25 DEC', 0)">DB25 DEC</div>
+          </div>
+        </div>
       </div>
       <div class="card-value" id="kFestCompPct">—</div>
       <div class="card-sub" id="kFestCompTickets">— tickets</div>
@@ -1000,9 +1010,9 @@ body::before {
         Daily Sales
         <div class="range-tabs" id="dailyRange">
           <span class="range-tab" data-days="3">3D</span>
-          <span class="range-tab" data-days="7">7D</span>
+          <span class="range-tab active" data-days="7">7D</span>
           <span class="range-tab" data-days="14">14D</span>
-          <span class="range-tab active" data-days="30">30D</span>
+          <span class="range-tab" data-days="30">30D</span>
           <span class="range-tab" data-days="0">ALL</span>
         </div>
       </div>
@@ -1231,11 +1241,28 @@ let chartDaily = null, chartComp = null;
 let cdInterval = null;
 let editingFest = null;
 let authenticated = false;
-let dailyDays = 30; // default chart range
+let dailyDays = 7; // default chart range
 let compVisible = [0, 1, 2, 3]; // which events visible in comparison
 const COMP_COLORS = ['#6b7280','#a78bfa','#f0abfc','#fbbf24']; // gray, purple, soft pink, warm yellow
 let detailsOpen = true;
 let pinnedCompIdx = null; // index pinned on comparison chart
+let comparisonFestIdx = 2; // which festival to compare (default DB25 NOV is index 2)
+
+// ─── DROPDOWN & FEST COMPARISON ──────────────────────────
+function toggleFestDropdown(e) {
+  e.stopPropagation();
+  const menu = document.getElementById('festCompDropdownMenu');
+  menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+function changeFestComparison(festName, idx) {
+  comparisonFestIdx = idx;
+  document.getElementById('festCompName').textContent = festName;
+  document.getElementById('festCompDropdownMenu').style.display = 'none';
+  loadData(); // reload to recalculate comparison
+}
+document.addEventListener('click', () => {
+  document.getElementById('festCompDropdownMenu').style.display = 'none';
+});
 
 // Chart.js plugin: draw vertical pin line + dot markers on comparison chart
 const compPinPlugin = {
@@ -1467,8 +1494,8 @@ function renderTickets(fest) {
   else if (avgDiff < 0) { avgBadge.className='badge badge-down'; avgBadge.textContent=`▼ ${Math.abs(avgDiff)} vs avg ${avg7}`; }
   else { avgBadge.className='badge badge-neutral'; avgBadge.textContent=`— on avg ${avg7}`; }
 
-  // Festival comparison vs DB25 Nov (previous festival, index 2)
-  const prevEvt = FEED.tickets.events[2];
+  // Festival comparison (selected festival via dropdown)
+  const prevEvt = FEED.tickets.events[comparisonFestIdx];
   const prevCumComp = n(data[todayRow]?.[prevEvt.cumCol]);
   const festCompPct = document.getElementById('kFestCompPct');
   const festCompTix = document.getElementById('kFestCompTickets');
@@ -1477,7 +1504,7 @@ function renderTickets(fest) {
     const tickDiff = todayCum - prevCumComp;
     festCompPct.textContent = (pctDiff >= 0 ? '+' : '') + pctDiff.toFixed(1) + '%';
     festCompPct.style.color = pctDiff >= 0 ? 'var(--green)' : 'var(--red)';
-    festCompTix.textContent = (tickDiff >= 0 ? '+' : '') + tickDiff.toLocaleString() + ' tickets vs DB25 Nov';
+    festCompTix.textContent = (tickDiff >= 0 ? '+' : '') + tickDiff.toLocaleString() + ' tickets';
     festCompTix.style.color = tickDiff >= 0 ? 'var(--green)' : 'var(--red)';
   }
 
@@ -1488,19 +1515,44 @@ function renderTickets(fest) {
 
 // ─── CHART: DAILY ───────────────────────────────────────
 function renderChartDaily(data, todayRow, cur) {
-  const labels = [], vals = [];
+  const labels = [], dateLabels = [], vals = [];
   const maxRow = dailyDays === 0 ? data.length-1 : Math.min(data.length-1, todayRow + dailyDays - 1);
+
+  const fest = festivals[activeFest];
+  const eventDate = parseDate(fest.eventDate);
+
   // Past N days: higher row indices = further past, then reverse for left-to-right timeline
   for (let i = maxRow; i >= todayRow; i--) {
-    labels.push(n(data[i]?.[FEED.tickets.dayCol]));
+    const dayOffset = n(data[i]?.[FEED.tickets.dayCol]);
+    labels.push(dayOffset);
+
+    // Calculate actual date from event date + dayOffset
+    const actualDate = new Date(eventDate);
+    actualDate.setDate(actualDate.getDate() + dayOffset);
+    dateLabels.push(fmtDate(actualDate));
+
     vals.push(n(data[i]?.[cur.deltaCol]));
   }
   const ctx = document.getElementById('chartDaily').getContext('2d');
   if (chartDaily) chartDaily.destroy();
+
+  const opts = baseChartOpts();
+  opts.plugins.tooltip = {
+    ...opts.plugins.tooltip,
+    callbacks: {
+      title: function(context) {
+        if (context.length === 0) return '';
+        const idx = context[0].dataIndex;
+        const dayOffset = labels[idx];
+        return dayOffset + ' days | ' + dateLabels[idx];
+      }
+    }
+  };
+
   chartDaily = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels,
+      labels: labels.map((day, i) => day + '\n' + dateLabels[i]),
       datasets: [{
         label: 'Daily Tickets',
         data: vals,
@@ -1510,7 +1562,7 @@ function renderChartDaily(data, todayRow, cur) {
         borderRadius: 3,
       }]
     },
-    options: baseChartOpts()
+    options: opts
   });
 }
 
@@ -1980,8 +2032,8 @@ function renderGlance(fest) {
   const projected = todayCum + avg7val * dte;
   document.getElementById('gProjected').textContent = projected.toLocaleString();
 
-  // Compare projected to DB25 Nov final (previous festival)
-  const prevEvt = FEED.tickets.events[2]; // DB25 Nov
+  // Compare projected to selected festival final (previous festival)
+  const prevEvt = FEED.tickets.events[comparisonFestIdx];
   const prevCum = n(data[todayRow]?.[prevEvt.cumCol]);
   const compareEl = document.getElementById('gCompare');
   if (prevCum > 0) {
@@ -2188,8 +2240,8 @@ function renderInsights(fest) {
   const convToday  = n(api.conv_today);
   const CPL_GOAL   = 50;
 
-  // Previous festival (DB25 Nov) at same point + final
-  const prevEvt = FEED.tickets.events[2];
+  // Previous festival (selected) at same point + final
+  const prevEvt = FEED.tickets.events[comparisonFestIdx];
   const prevNow = n(data[todayRow]?.[prevEvt.cumCol]);
   let prevFinal = 0;
   for (let r = FEED.tickets.dataStartRow; r < data.length; r++) {
