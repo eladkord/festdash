@@ -723,6 +723,7 @@ body::before {
 @keyframes foxDriftFast  { 0%{transform:translateX(-80px)} 50%{transform:translateX(80px)} 100%{transform:translateX(-80px)} }
 @keyframes foxDriftPanic { 0%{transform:translateX(-70px)} 25%{transform:translateX(70px)} 50%{transform:translateX(-60px)} 75%{transform:translateX(65px)} 100%{transform:translateX(-70px)} }
 @keyframes foxJump       { 0%,100%{transform:translateY(0)scale(1)} 35%{transform:translateY(-22px)scale(0.94,1.1)} 60%{transform:translateY(-12px)scale(1)} }
+@keyframes foxClickJump  { 0%{transform:translateY(0)scaleX(1)} 20%{transform:translateY(-30px)scaleY(0.8)scaleX(1.15)} 55%{transform:translateY(-12px)scaleX(1)} 80%{transform:translateY(-3px)} 100%{transform:translateY(0)scaleX(1)} }
 @keyframes foxSleepBob   { 0%,100%{transform:scaleY(1)translateY(0)} 50%{transform:scaleY(0.92)translateY(4px)} }
 @keyframes foxTailWag    { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(28deg)} }
 @keyframes foxTailFast   { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(34deg)} }
@@ -916,10 +917,10 @@ body::before {
       <button class="icon-btn" onclick="openSettings()">⚙ SETTINGS</button>
     </div>
     <!-- FOX CHARACTER — sits in the topbar centre space between badge and right buttons -->
-    <div id="foxWrap" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;width:340px;overflow:visible">
-      <div id="foxDrift" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px;animation:foxDrift 14s ease-in-out infinite">
+    <div id="foxWrap" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;overflow:visible">
+      <div id="foxDrift" style="position:absolute;bottom:0;left:50%;display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px;transform:translateX(-50%)">
         <div id="foxMoodLabel" style="font-size:0.55rem;font-family:'JetBrains Mono',monospace;color:rgba(255,180,80,0.9);white-space:nowrap;letter-spacing:0.05em;opacity:0;transition:opacity 0.5s;height:12px;text-align:center"></div>
-        <div id="foxChar" class="fox-idle">
+        <div id="foxChar" class="fox-idle" style="pointer-events:auto;cursor:pointer" title="click me!">
           <!-- pixel-art fox SVG 72×64 grid-aligned -->
           <svg id="foxSvg" width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">
 
@@ -1782,6 +1783,8 @@ function updateFox() {
   const fox   = document.getElementById('foxChar');
   const label = document.getElementById('foxMoodLabel');
   if (!fox || !label) return;
+  // Don't interrupt exhausted rest
+  if (fox._tiredUntil && Date.now() < fox._tiredUntil) return;
 
   const sweat   = document.getElementById('foxSweat');
   const spark   = document.getElementById('foxSparkle');
@@ -1856,44 +1859,132 @@ function updateFox() {
     }
   }
 
-  // Sleep: tilt fox on its side
-  if (svgEl) svgEl.style.transform = mood === 'sleep' ? 'rotate(20deg)' : '';
+  // Sleep tilt
+  if (svgEl && mood === 'sleep') svgEl.style.transform = 'rotate(20deg)';
+  // (facing direction handled by foxLerpLoop — don't reset here unless sleeping)
+}
 
-  // Drift speed + fox facing direction
+// ─── FOX INTERACTION ─────────────────────────────────────
+let _foxDriftCur  = 0;   // current X offset of foxDrift from centre (px)
+let _foxDriftTgt  = 0;   // target X (mouse or wander)
+let _foxMouseCtrl = false;
+let _foxMouseTgt  = 0;
+let _foxWanderTgt = 0;
+let _foxClickLog  = [];  // timestamps for exhaustion detection
+
+function _foxPickWander() {
+  _foxWanderTgt = (Math.random() - 0.5) * 200; // ±100 px from centre
+}
+_foxPickWander();
+
+function foxLerpLoop() {
+  requestAnimationFrame(foxLerpLoop);
   const drift = document.getElementById('foxDrift');
+  const fox   = document.getElementById('foxChar');
+  const svgEl = document.getElementById('foxSvg');
+  if (!drift) return;
+
+  const tired = fox && fox._tiredUntil && Date.now() < fox._tiredUntil;
+  if (tired) return; // frozen while resting
+
+  const tgt   = _foxMouseCtrl ? _foxMouseTgt : _foxWanderTgt;
+  const speed = _foxMouseCtrl ? 0.13 : 0.018;
+  const dx    = tgt - _foxDriftCur;
+
+  // Pick new wander spot when close enough
+  if (!_foxMouseCtrl && Math.abs(dx) < 6) _foxPickWander();
+
+  _foxDriftCur += dx * speed;
+
+  // Move foxDrift — its base position is left:50%, so we shift from that
+  drift.style.transform = `translateX(calc(-50% + ${_foxDriftCur}px))`;
+
+  // Face direction of travel
+  if (svgEl && fox && !fox.className.includes('sleep')) {
+    if (Math.abs(dx) > 0.8) svgEl.style.transform = dx < 0 ? 'scaleX(-1)' : '';
+  }
+}
+
+function initFoxInteraction() {
+  foxLerpLoop(); // start the rAF loop
+
+  const topbar = document.querySelector('.topbar');
+  const fox    = document.getElementById('foxChar');
+  if (!topbar || !fox) return;
+
+  // Mouse tracking on topbar
+  topbar.addEventListener('mousemove', (e) => {
+    const rect  = topbar.getBoundingClientRect();
+    const maxOff = Math.min(rect.width / 2 - 60, 140);
+    _foxMouseTgt  = Math.max(-maxOff, Math.min(maxOff, e.clientX - rect.left - rect.width / 2));
+    _foxMouseCtrl = true;
+  });
+  topbar.addEventListener('mouseleave', () => {
+    _foxMouseCtrl = false;
+    _foxPickWander();
+  });
+
+  // Click handling
+  fox.addEventListener('click', () => {
+    if (fox._tiredUntil && Date.now() < fox._tiredUntil) return;
+    const now = Date.now();
+    _foxClickLog = _foxClickLog.filter(t => now - t < 10000);
+    _foxClickLog.push(now);
+    if (_foxClickLog.length >= 5) { _foxClickLog = []; foxExhausted(); return; }
+    foxClickJump();
+  });
+}
+
+function foxClickJump() {
+  const fox   = document.getElementById('foxChar');
+  const drift = document.getElementById('foxDrift');
+  if (!fox) return;
+
+  // Override bob with jump animation
+  fox.style.animation = 'foxClickJump 0.55s ease-out';
+  fox.addEventListener('animationend', () => { fox.style.animation = ''; }, { once: true });
+
+  // Sparkle particles burst out of fox position (injected into drift so they inherit offset)
   if (drift) {
-    const speeds = { idle:'18s', walk:'14s', trot:'9s', run:'5s', panic:'2.8s', sleep:'30s', celebrate:'7s', worried:'16s' };
-    const spd = speeds[mood] || '14s';
-    const animName = mood === 'panic' ? 'foxDriftPanic' : mood === 'run' ? 'foxDriftFast' : 'foxDrift';
-    drift.style.animation = `${animName} ${spd} ease-in-out infinite`;
-  }
-  // Flip SVG to face direction of travel (mirror at midpoint)
-  if (svgEl && mood !== 'sleep') {
-    // JS-driven direction flip based on drift phase — use a simple alternating timer
-    if (!fox._flipTimer) {
-      fox._flipTimer = setInterval(() => {
-        if (!document.getElementById('foxChar')) { clearInterval(fox._flipTimer); return; }
-        const d = document.getElementById('foxDrift');
-        if (!d) return;
-        const cur = getComputedStyle(d).transform;
-        // parse translateX from matrix
-        const m = cur.match(/matrix.*\((.+)\)/);
-        if (m) {
-          const vals = m[1].split(',');
-          const tx = parseFloat(vals[4] || 0);
-          // face left (flipped) when moving left (tx going negative relative to centre)
-          if (fox._lastTx !== undefined) {
-            const svg = document.getElementById('foxSvg');
-            if (svg) svg.style.transform = (tx < fox._lastTx) ? 'scaleX(-1)' : '';
-          }
-          fox._lastTx = tx;
-        }
-      }, 300);
+    const cols = ['#c8ff00','#fbbf24','#f97316','#a78bfa','#38bdf8','#4ade80','#f87171'];
+    for (let i = 0; i < 9; i++) {
+      const p = document.createElement('div');
+      p.style.cssText = `position:absolute;bottom:24px;left:50%;width:${4+Math.floor(Math.random()*4)}px;height:${4+Math.floor(Math.random()*4)}px;border-radius:1px;background:${cols[i%cols.length]};pointer-events:none;z-index:20;margin-left:-3px`;
+      drift.appendChild(p);
+      const ang = (i / 9) * Math.PI * 2;
+      const spd = 30 + Math.random() * 35;
+      p.animate([
+        { transform: 'translate(0,0) scale(1)', opacity: 1 },
+        { transform: `translate(${Math.cos(ang)*spd}px,${-Math.abs(Math.sin(ang)*spd)-18}px) scale(0.2)`, opacity: 0 }
+      ], { duration: 500 + Math.random() * 200, easing: 'ease-out' });
+      setTimeout(() => p.remove(), 800);
     }
-  } else if (fox._flipTimer && mood === 'sleep') {
-    clearInterval(fox._flipTimer);
-    fox._flipTimer = null;
   }
+}
+
+function foxExhausted() {
+  const fox    = document.getElementById('foxChar');
+  const label  = document.getElementById('foxMoodLabel');
+  const zzz    = document.getElementById('foxZzz');
+  const eyelid = document.getElementById('foxEyelid');
+  const svgEl  = document.getElementById('foxSvg');
+  if (!fox) return;
+
+  fox._tiredUntil = Date.now() + 15000;
+  fox.style.animation = '';
+  fox.className = 'fox-sleep';
+  if (label)  { label.textContent = '💤 zzz...'; label.style.opacity = '1'; }
+  if (zzz)    zzz.setAttribute('opacity', '1');
+  if (eyelid) eyelid.setAttribute('height', '6');
+  if (svgEl)  svgEl.style.transform = 'rotate(20deg)';
+
+  // Wake up after 15 s
+  setTimeout(() => {
+    if (!fox) return;
+    fox._tiredUntil = 0;
+    if (svgEl) svgEl.style.transform = '';
+    updateFox();
+  }, 15000);
 }
 
 // ─── TICKETS ────────────────────────────────────────────
@@ -2986,6 +3077,7 @@ function hideError() { document.getElementById('errorBar').style.display='none';
 // ═══════════════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', () => {
   hideLoading();
+  initFoxInteraction();
   const remembered = localStorage.getItem('rememberMe') === '1';
   if (remembered) {
     // Skip password gate — remembered device
