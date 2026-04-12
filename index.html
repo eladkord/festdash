@@ -2349,9 +2349,12 @@ function renderBudget() {
     pctSOt = Math.max(get('SO_%') * 100, tickSO === 0 ? 100 : 100);
   }
 
-  // ── Revenue BEP %: derive from current / target ──
-  const pctBEPr = revBEP > 0 ? (revCur / revBEP * 100) : (get('BEP_%_revenue') * 100);
-  const pctSOr  = get('SO_%_revenue') * 100;
+  // ── Revenue %: trust sheet cells directly (BEP_%_revenue, SO_%_revenue stored as decimals) ──
+  // Only fall back to computed if sheet cell is empty/0
+  const sheetBEPr = get('BEP_%_revenue') * 100;
+  const sheetSOr  = get('SO_%_revenue')  * 100;
+  const pctBEPr = sheetBEPr || (revBEP > 0 && revCur > 0 ? (revCur / revBEP * 100) : 0);
+  const pctSOr  = sheetSOr;
 
   const el = id => document.getElementById(id);
 
@@ -2400,23 +2403,19 @@ function renderBudget() {
   }
 
   // BEP revenue card
-  // revenue_current can be negative pre-event; still show it
-  // Use BEP_%_revenue from sheet if direct calculation unavailable
-  const pctBEPrDisplay = pctBEPr !== 0 ? pctBEPr : (get('BEP_%_revenue') * 100);
   if (el('kBEPrevPct')) {
-    if (pctBEPrDisplay) {
-      setPctText('kBEPrevPct', pctBEPrDisplay);
-    } else {
-      el('kBEPrevPct').textContent = revCur ? (revCur < 0 ? '₪' + Math.round(revCur).toLocaleString() : '0.0%') : '—';
-    }
+    if (pctBEPr) { setPctText('kBEPrevPct', pctBEPr); }
+    else { el('kBEPrevPct').textContent = '—'; }
   }
-  setBar('barBEPrev', Math.max(0, pctBEPrDisplay));
+  setBar('barBEPrev', Math.max(0, pctBEPr));
   if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
 
-  // SO revenue card — use SO_%_revenue from sheet, or fall back to SO tickets %
-  const pctSOrevDisplay = pctSOr || pctSOt;
-  setPctText('kSOrevPct', pctSOrevDisplay);
-  setBar('barSOrev', pctSOrevDisplay);
+  // SO revenue card
+  if (el('kSOrevPct')) {
+    if (pctSOr) { setPctText('kSOrevPct', pctSOr); }
+    else { el('kSOrevPct').textContent = '—'; }
+  }
+  setBar('barSOrev', Math.max(0, pctSOr));
 }
 
 // ─── META ────────────────────────────────────────────────
