@@ -2325,29 +2325,16 @@ function renderBudget() {
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
 
-  // ── BEP % (tickets): derive from current vs target, uncapped ──
-  // tickBEPr from sheet = tickets still needed (positive) or overshoot (negative)
-  // true BEP target = tickCur + tickBEPr  (when tickBEPr > 0)
-  // when tickBEPr <= 0: BEP exceeded → real % = tickCur / (tickCur - tickBEPr) * 100 (>100)
-  const bepTarget = tickCur + (tickBEPr > 0 ? tickBEPr : 0) + Math.abs(tickBEPr > 0 ? 0 : tickBEPr);
-  // simpler: absolute BEP target is always tickCur + tickBEPr when > 0, else derive from sheet
-  let pctBEPt;
-  if (tickBEPr > 0) {
-    pctBEPt = (tickCur / (tickCur + tickBEPr)) * 100;
-  } else {
-    // Use the raw sheet BEP__% (stored as decimal), but never cap — let it be 105%, 120% etc
-    const rawPct = get('BEP__%') * 100;
-    // If sheet also shows <100 even though remaining=0, derive a minimum of 100
-    pctBEPt = rawPct >= 100 ? rawPct : (tickBEPr === 0 ? 100 : Math.max(rawPct, 100 + Math.abs(tickBEPr)));
-  }
+  // ── BEP % (tickets): single formula for all cases ──
+  // tickBEPr = tickets still needed (positive) or overshoot (negative, C4)
+  // BEP target = tickCur + tickBEPr (works for all signs)
+  // positive remaining → <100%, zero → 100%, negative → >100%
+  const bepTicketTarget = tickCur + tickBEPr;
+  const pctBEPt = bepTicketTarget > 0 ? (tickCur / bepTicketTarget) * 100 : (tickBEPr <= 0 ? 100 : 0);
 
-  // ── SO % (tickets) ──
-  let pctSOt;
-  if (tickSO > 0) {
-    pctSOt = (tickCur / (tickCur + tickSO)) * 100;
-  } else {
-    pctSOt = Math.max(get('SO_%') * 100, tickSO === 0 ? 100 : 100);
-  }
+  // ── SO % (tickets): same consistent formula ──
+  const soTicketTarget = tickCur + tickSO;
+  const pctSOt = soTicketTarget > 0 ? (tickCur / soTicketTarget) * 100 : (tickSO <= 0 ? 100 : 0);
 
   // ── Revenue %: trust sheet cells directly (BEP_%_revenue, SO_%_revenue stored as decimals) ──
   // Fall back chain: sheet cell → derived from revCur/revBEP → proxy from ticket % (revenue ∝ tickets)
