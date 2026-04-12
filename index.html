@@ -1721,8 +1721,8 @@ function loadCache(fest) {
     if (!raw) return null;
     const { ts, data } = JSON.parse(raw);
     if (Date.now() - ts > CACHE_TTL) return null;
-    // Invalidate if missing ppc_budget_total (old cache from pre-fix deployment)
-    if (!data.budget?.ppc_budget_total) return null;
+    // Invalidate only if key is missing entirely (0 is valid)
+    if (data.budget && !('ppc_budget_total' in data.budget)) return null;
     return { data, ageMs: Date.now() - ts };
   } catch(e) { return null; }
 }
@@ -2832,16 +2832,23 @@ function renderGlance(fest) {
   const projected = todayCum + avg7val * dte;
   document.getElementById('gProjected').textContent = projected.toLocaleString();
 
-  // Compare projected to selected festival final (previous festival)
+  // Compare projected to previous festival's FINAL total (highest cumulative in that column)
   const prevEvt = FEED.tickets.events[comparisonFestIdx];
-  const prevCum = n(data[todayRow]?.[prevEvt.cumCol]);
+  let prevFinal = 0;
+  for (let r = FEED.tickets.dataStartRow; r < data.length; r++) {
+    const v = n(data[r]?.[prevEvt.cumCol]);
+    if (v > prevFinal) prevFinal = v;
+  }
   const compareEl = document.getElementById('gCompare');
-  if (prevCum > 0) {
-    const diff = (projected - prevCum) / prevCum * 100;
+  if (prevFinal > 0) {
+    const diff = (projected - prevFinal) / prevFinal * 100;
+    const tickDelta = projected - prevFinal;
     const absDiff = Math.abs(diff);
-    const diffStr = absDiff < 0.5 ? '~0' : (diff > 0 ? '+' : '-') + absDiff.toFixed(0);
+    const sign = absDiff < 0.5 ? '' : diff > 0 ? '+' : '-';
+    const diffStr = absDiff < 0.5 ? '~0%' : sign + absDiff.toFixed(0) + '%';
+    const deltaStr = (tickDelta >= 0 ? '+' : '') + Math.round(tickDelta).toLocaleString() + ' vs ' + prevEvt.name;
     compareEl.className = diff >= 0.5 ? 'glance-compare up' : diff <= -0.5 ? 'glance-compare down' : 'glance-compare';
-    compareEl.textContent = diffStr + '% vs DB25 Nov';
+    compareEl.textContent = diffStr + ' (' + deltaStr + ')';
   } else {
     compareEl.textContent = '';
   }
@@ -2850,15 +2857,10 @@ function renderGlance(fest) {
   const bepRemaining = n(b.tickets_BEP);
   const bepEl = document.getElementById('gBEPremain');
 
-  // BEP %: always continuous — never capped at 100
-  let bepPct;
-  if (bepRemaining > 0) {
-    bepPct = (tickCur / (tickCur + bepRemaining)) * 100;
-  } else {
-    // Use raw sheet %, fall back to 100 minimum when remaining is 0
-    const rawPct = n(b['BEP__%']) * 100;
-    bepPct = rawPct > 0 ? Math.max(rawPct, 100) : 100;
-  }
+  // BEP %: single formula — tickCur / (tickCur + bepRemaining)
+  // bepRemaining > 0 → <100%, = 0 → 100%, < 0 (C4 = -121) → >100% ✓
+  const bepTicketTarget = tickCur + bepRemaining;
+  const bepPct = bepTicketTarget > 0 ? (tickCur / bepTicketTarget) * 100 : (bepRemaining <= 0 ? 100 : 0);
   // Show BEP % — green + "+" prefix when over 100
   setPctText('gBEP', bepPct);
   // Style the gBEP element colour directly
