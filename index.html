@@ -714,32 +714,42 @@ body::before {
 .comp-zoom-tab.active { color: var(--accent); background: var(--accent-dim); border-color: rgba(200,255,0,0.25); }
 
 /* ── FOX CHARACTER ── */
-@keyframes foxWalkMove  { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
-@keyframes foxRunMove   { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
-@keyframes foxPanicMove { 0%{transform:translateX(-70px)} 100%{transform:translateX(calc(100vw + 70px))} }
-@keyframes foxSleepMove { 0%{transform:translateX(30vw)} 100%{transform:translateX(30vw)} }
-@keyframes foxBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
-@keyframes foxRunBob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-@keyframes foxPanicBob { 0%,100%{transform:translateY(0) rotate(0deg)} 25%{transform:translateY(-8px) rotate(-3deg)} 75%{transform:translateY(-5px) rotate(3deg)} }
-@keyframes foxLegWalk { 0%,100%{height:6px;transform:rotate(0deg)} 50%{height:8px;transform:rotate(10deg)} }
-@keyframes foxLegRun  { 0%,100%{height:4px;transform:rotate(-15deg)} 50%{height:10px;transform:rotate(15deg)} }
-@keyframes foxTailWag { 0%,100%{transform:rotate(-20deg)} 50%{transform:rotate(10deg)} }
-@keyframes foxTailDroop { 0%,100%{transform:rotate(10deg)} 50%{transform:rotate(20deg)} }
-@keyframes foxSleepBob { 0%,100%{transform:scaleY(1)} 50%{transform:scaleY(0.9)} }
-@keyframes foxCelebrate { 0%,100%{transform:translateY(0) rotate(0)} 25%{transform:translateY(-12px) rotate(-5deg)} 75%{transform:translateY(-8px) rotate(5deg)} }
+@keyframes foxBobSlow    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-2px)} }
+@keyframes foxBob        { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+@keyframes foxBobFast    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes foxPanicShake { 0%{transform:translate(0,0)} 18%{transform:translate(-7px,-9px)rotate(-4deg)} 36%{transform:translate(8px,-7px)rotate(4deg)} 54%{transform:translate(-6px,-10px)rotate(-3deg)} 72%{transform:translate(7px,-6px)rotate(3deg)} 100%{transform:translate(0,0)} }
+@keyframes foxRunOsc     { 0%,100%{transform:translateX(-16px)} 50%{transform:translateX(16px)} }
+@keyframes foxJump       { 0%,100%{transform:translateY(0)scale(1)} 35%{transform:translateY(-22px)scale(0.94,1.1)} 60%{transform:translateY(-12px)scale(1)} }
+@keyframes foxSleepBob   { 0%,100%{transform:scaleY(1)translateY(0)} 50%{transform:scaleY(0.92)translateY(4px)} }
+@keyframes foxTailWag    { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(28deg)} }
+@keyframes foxTailFast   { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(34deg)} }
+@keyframes foxTailDroop  { 0%,100%{transform:rotate(6deg)} 50%{transform:rotate(22deg)} }
+@keyframes foxLegA       { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+@keyframes foxLegB       { 0%,100%{transform:translateY(-3px)} 50%{transform:translateY(0)} }
 
-#foxChar.fox-walk   { animation: foxWalkMove 18s linear infinite, foxBob 0.5s ease-in-out infinite; }
-#foxChar.fox-trot   { animation: foxWalkMove 10s linear infinite, foxBob 0.35s ease-in-out infinite; }
-#foxChar.fox-run    { animation: foxRunMove 6s linear infinite, foxRunBob 0.25s ease-in-out infinite; }
-#foxChar.fox-panic  { animation: foxPanicMove 3.5s linear infinite, foxPanicBob 0.18s ease-in-out infinite; }
-#foxChar.fox-sleep  { animation: foxSleepMove 0s linear, foxSleepBob 2s ease-in-out infinite; left:35% !important; transform:none !important; }
-#foxChar.fox-celebrate { animation: foxCelebrate 0.6s ease-in-out infinite; left:45% !important; }
+#foxChar { position:relative; will-change:transform; }
+#foxChar.fox-idle      { animation: foxBobSlow 2.2s ease-in-out infinite; }
+#foxChar.fox-walk      { animation: foxBob 0.65s ease-in-out infinite; }
+#foxChar.fox-trot      { animation: foxBobFast 0.42s ease-in-out infinite; }
+#foxChar.fox-run       { animation: foxRunOsc 0.9s ease-in-out infinite, foxBobFast 0.22s ease-in-out infinite; }
+#foxChar.fox-panic     { animation: foxPanicShake 0.22s ease-in-out infinite; }
+#foxChar.fox-sleep     { animation: foxSleepBob 2.8s ease-in-out infinite; }
+#foxChar.fox-celebrate { animation: foxJump 0.62s ease-in-out infinite; }
+#foxChar.fox-worried   { animation: foxBobSlow 1.8s ease-in-out infinite; }
 
-#foxChar.fox-sleep #foxSvg  { transform: rotate(90deg) translateX(10px); transform-origin: center; }
-#foxChar.fox-run   #foxTail,
-#foxChar.fox-trot  #foxTail  { animation: foxTailWag 0.3s ease-in-out infinite; transform-origin: 10px 34px; }
-#foxChar.fox-walk  #foxTail  { animation: foxTailWag 0.6s ease-in-out infinite; transform-origin: 10px 34px; }
-#foxChar.fox-worried #foxTail { animation: foxTailDroop 1s ease-in-out infinite; transform-origin: 10px 34px; }
+#foxChar.fox-idle #foxTail,
+#foxChar.fox-walk #foxTail { animation: foxTailWag 0.9s ease-in-out infinite; transform-box:fill-box; transform-origin:5% 85%; }
+#foxChar.fox-trot #foxTail,
+#foxChar.fox-run  #foxTail,
+#foxChar.fox-panic #foxTail,
+#foxChar.fox-celebrate #foxTail { animation: foxTailFast 0.28s ease-in-out infinite; transform-box:fill-box; transform-origin:5% 85%; }
+#foxChar.fox-worried #foxTail { animation: foxTailDroop 1.2s ease-in-out infinite; transform-box:fill-box; transform-origin:5% 85%; }
+
+#foxChar.fox-walk  #foxLeg1, #foxChar.fox-walk  #foxLeg3,
+#foxChar.fox-run   #foxLeg1, #foxChar.fox-run   #foxLeg3 { animation: foxLegA var(--lspd,0.65s) ease-in-out infinite; }
+#foxChar.fox-walk  #foxLeg2, #foxChar.fox-walk  #foxLeg4,
+#foxChar.fox-run   #foxLeg2, #foxChar.fox-run   #foxLeg4 { animation: foxLegB var(--lspd,0.65s) ease-in-out infinite; }
+#foxChar.fox-run   { --lspd: 0.22s; }
 
 /* ── FEST CHIPS (comparison chart) ── */
 .fest-chips { display: flex; gap: 6px; margin: 8px 0 4px; flex-wrap: wrap; }
@@ -902,56 +912,130 @@ body::before {
       <button class="icon-btn" onclick="loadData()">↻ REFRESH</button>
       <button class="icon-btn" onclick="openSettings()">⚙ SETTINGS</button>
     </div>
-    <!-- FOX CHARACTER -->
-    <div id="foxWrap" style="position:absolute;bottom:0;left:0;width:100%;height:100%;pointer-events:none;overflow:hidden">
-      <div id="foxChar" style="position:absolute;bottom:4px;will-change:transform">
-        <div id="foxMood" style="position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:0.55rem;font-family:'JetBrains Mono',monospace;color:rgba(255,180,80,0.85);white-space:nowrap;letter-spacing:0.05em;opacity:0;transition:opacity 0.5s" id="foxMoodLabel"></div>
-        <svg id="foxSvg" width="54" height="48" viewBox="0 0 54 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <!-- Tail -->
-          <ellipse id="foxTail" cx="10" cy="34" rx="10" ry="7" fill="#f97316" transform="rotate(-20 10 34)"/>
-          <ellipse cx="6" cy="37" rx="5" ry="4" fill="white" transform="rotate(-20 6 37)"/>
-          <!-- Body -->
-          <ellipse cx="28" cy="34" rx="14" ry="10" fill="#f97316"/>
-          <!-- Belly -->
-          <ellipse cx="30" cy="36" rx="8" ry="6" fill="#fed7aa"/>
-          <!-- Head -->
-          <ellipse cx="40" cy="24" rx="11" ry="10" fill="#f97316"/>
-          <!-- Left Ear -->
-          <polygon points="32,16 28,6 36,14" fill="#f97316"/>
-          <polygon points="33,15 30,8 35,14" fill="#fda4af"/>
-          <!-- Right Ear -->
-          <polygon points="44,15 41,5 48,14" fill="#f97316"/>
-          <polygon points="44,14 42,7 47,13" fill="#fda4af"/>
-          <!-- Snout -->
-          <ellipse cx="48" cy="27" rx="5" ry="4" fill="#fed7aa"/>
-          <!-- Nose -->
-          <ellipse cx="51" cy="26" rx="2" ry="1.5" fill="#1c1c2e"/>
-          <!-- Eye -->
-          <ellipse id="foxEye" cx="43" cy="21" rx="2.5" ry="2.5" fill="#1c1c2e"/>
-          <ellipse cx="43.8" cy="20.2" rx="0.8" ry="0.8" fill="white"/>
-          <!-- Mouth -->
-          <path id="foxMouth" d="M47 29 Q49 31 51 29" stroke="#c2410c" stroke-width="1.2" fill="none" stroke-linecap="round"/>
-          <!-- Legs -->
-          <rect id="leg1" x="20" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
-          <rect id="leg2" x="28" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
-          <rect id="leg3" x="35" y="42" width="5" height="6" rx="2" fill="#ea580c"/>
-          <!-- Sweat drops (hidden by default) -->
-          <g id="foxSweat" opacity="0">
-            <ellipse cx="36" cy="13" rx="2" ry="3" fill="#93c5fd" opacity="0.8"/>
-            <ellipse cx="31" cy="10" rx="1.5" ry="2.5" fill="#93c5fd" opacity="0.6"/>
-          </g>
-          <!-- Stars/sparkles (hidden by default) -->
-          <g id="foxSparkle" opacity="0">
-            <text x="30" y="12" font-size="8" fill="#fbbf24">✦</text>
-            <text x="38" y="8" font-size="6" fill="#c8ff00">✦</text>
-          </g>
-          <!-- ZZZ (hidden by default) -->
-          <g id="foxZzz" opacity="0">
-            <text x="44" y="14" font-size="7" fill="#a78bfa" font-family="monospace">z</text>
-            <text x="48" y="10" font-size="9" fill="#a78bfa" font-family="monospace">z</text>
-            <text x="52" y="6" font-size="11" fill="#a78bfa" font-family="monospace">z</text>
-          </g>
-        </svg>
+    <!-- FOX CHARACTER — sits in the topbar centre space between badge and right buttons -->
+    <div id="foxWrap" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;min-width:200px">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px">
+        <div id="foxMoodLabel" style="font-size:0.55rem;font-family:'JetBrains Mono',monospace;color:rgba(255,180,80,0.9);white-space:nowrap;letter-spacing:0.05em;opacity:0;transition:opacity 0.5s;height:12px;text-align:center"></div>
+        <div id="foxChar" class="fox-idle">
+          <!-- pixel-art fox SVG 72×64 grid-aligned -->
+          <svg id="foxSvg" width="72" height="64" viewBox="0 0 72 64" fill="none" xmlns="http://www.w3.org/2000/svg" style="image-rendering:pixelated">
+
+            <!-- ── TAIL (left side, waggable) ── -->
+            <g id="foxTail">
+              <!-- tail base gradient orange→tip white -->
+              <rect x="2"  y="38" width="4" height="4" fill="#ea580c"/>
+              <rect x="2"  y="34" width="4" height="4" fill="#f97316"/>
+              <rect x="4"  y="30" width="4" height="4" fill="#f97316"/>
+              <rect x="6"  y="26" width="4" height="4" fill="#fb923c"/>
+              <rect x="8"  y="22" width="6" height="4" fill="#fb923c"/>
+              <rect x="10" y="20" width="6" height="4" fill="#fdba74"/>
+              <rect x="12" y="18" width="4" height="4" fill="#fde68a"/>
+              <!-- white tip -->
+              <rect x="10" y="16" width="6" height="4" fill="#ffffff"/>
+              <rect x="12" y="14" width="4" height="4" fill="#ffffff"/>
+              <!-- outline -->
+              <rect x="2"  y="38" width="4" height="2" fill="#9a3412" opacity="0.5"/>
+              <rect x="4"  y="28" width="2" height="2" fill="#9a3412" opacity="0.4"/>
+            </g>
+
+            <!-- ── BODY ── -->
+            <!-- shadow/base underline -->
+            <rect x="16" y="52" width="36" height="4" rx="2" fill="#7c2d12" opacity="0.4"/>
+            <!-- main body -->
+            <rect x="16" y="34" width="8"  height="4"  fill="#ea580c"/>
+            <rect x="16" y="30" width="12" height="4"  fill="#f97316"/>
+            <rect x="14" y="36" width="32" height="14" fill="#f97316"/>
+            <rect x="18" y="32" width="28" height="8"  fill="#f97316"/>
+            <!-- belly patch -->
+            <rect x="22" y="38" width="18" height="10" fill="#fde68a"/>
+            <rect x="24" y="36" width="14" height="4"  fill="#fde68a"/>
+            <!-- body shading (top stripe) -->
+            <rect x="18" y="32" width="26" height="2"  fill="#c2410c" opacity="0.35"/>
+            <!-- pixel stripe detail on back -->
+            <rect x="38" y="34" width="2"  height="12" fill="#c2410c" opacity="0.25"/>
+            <rect x="42" y="34" width="2"  height="8"  fill="#c2410c" opacity="0.2"/>
+
+            <!-- ── HEAD ── -->
+            <rect x="38" y="12" width="24" height="22" fill="#f97316"/>
+            <rect x="40" y="10" width="20" height="4"  fill="#f97316"/>
+            <!-- head shading -->
+            <rect x="38" y="12" width="24" height="3"  fill="#c2410c" opacity="0.3"/>
+            <!-- cheek patch -->
+            <rect x="54" y="24" width="8"  height="8"  fill="#fde68a"/>
+            <rect x="56" y="22" width="8"  height="6"  fill="#fde68a"/>
+            <!-- snout -->
+            <rect x="58" y="26" width="10" height="8"  fill="#fed7aa"/>
+            <rect x="60" y="24" width="8"  height="4"  fill="#fed7aa"/>
+            <!-- nose (pixel) -->
+            <rect x="62" y="22" width="6"  height="4"  fill="#1c1c2e"/>
+            <rect x="64" y="20" width="4"  height="4"  fill="#1c1c2e"/>
+            <!-- nose highlight -->
+            <rect x="62" y="22" width="2"  height="2"  fill="#6b7280" opacity="0.6"/>
+
+            <!-- ── EARS ── -->
+            <!-- left ear -->
+            <rect x="40" y="4"  width="4"  height="4"  fill="#f97316"/>
+            <rect x="38" y="6"  width="4"  height="6"  fill="#f97316"/>
+            <rect x="40" y="8"  width="4"  height="4"  fill="#fda4af"/>
+            <rect x="42" y="6"  width="2"  height="4"  fill="#fda4af"/>
+            <!-- right ear -->
+            <rect x="52" y="2"  width="4"  height="4"  fill="#f97316"/>
+            <rect x="54" y="4"  width="4"  height="6"  fill="#f97316"/>
+            <rect x="54" y="6"  width="4"  height="4"  fill="#fda4af"/>
+            <rect x="56" y="4"  width="2"  height="4"  fill="#fda4af"/>
+            <!-- ear tips (dark) -->
+            <rect x="40" y="4"  width="4"  height="2"  fill="#9a3412"/>
+            <rect x="52" y="2"  width="4"  height="2"  fill="#9a3412"/>
+
+            <!-- ── EYE ── -->
+            <g id="foxEyeGroup">
+              <rect id="foxEye" x="46" y="18" width="6" height="6" fill="#1c1c2e"/>
+              <!-- pupil shine -->
+              <rect x="46" y="18" width="2" height="2" fill="#4b5563" opacity="0.9"/>
+              <!-- eyelid (mood control) -->
+              <rect id="foxEyelid" x="46" y="18" width="6" height="0" fill="#f97316"/>
+            </g>
+
+            <!-- ── MOUTH ── -->
+            <!-- smile by default — JS swaps path approach for SVG rects instead -->
+            <g id="foxMouthGroup">
+              <rect id="foxMouthL" x="54" y="30" width="2" height="2" fill="#7c2d12"/>
+              <rect id="foxMouthM" x="56" y="32" width="4" height="2" fill="#7c2d12"/>
+              <rect id="foxMouthR" x="60" y="30" width="2" height="2" fill="#7c2d12"/>
+            </g>
+
+            <!-- ── LEGS ── -->
+            <g id="foxLeg1"><rect x="20" y="48" width="6" height="10" rx="2" fill="#ea580c"/><rect x="20" y="54" width="6" height="4" rx="1" fill="#9a3412"/></g>
+            <g id="foxLeg2"><rect x="28" y="48" width="6" height="10" rx="2" fill="#ea580c"/><rect x="28" y="54" width="6" height="4" rx="1" fill="#9a3412"/></g>
+            <g id="foxLeg3"><rect x="36" y="48" width="6" height="10" rx="2" fill="#ea580c"/><rect x="36" y="54" width="6" height="4" rx="1" fill="#9a3412"/></g>
+            <g id="foxLeg4"><rect x="44" y="48" width="6" height="10" rx="2" fill="#ea580c"/><rect x="44" y="54" width="6" height="4" rx="1" fill="#9a3412"/></g>
+
+            <!-- ── SWEAT DROPS (hidden) ── -->
+            <g id="foxSweat" opacity="0">
+              <rect x="42" y="6"  width="4" height="6" rx="2" fill="#93c5fd" opacity="0.9"/>
+              <rect x="48" y="2"  width="3" height="5" rx="1" fill="#93c5fd" opacity="0.7"/>
+              <rect x="36" y="10" width="3" height="5" rx="1" fill="#bfdbfe" opacity="0.6"/>
+            </g>
+
+            <!-- ── SPARKLES (hidden) ── -->
+            <g id="foxSparkle" opacity="0">
+              <rect x="30" y="8"  width="4" height="4" fill="#fbbf24"/>
+              <rect x="32" y="6"  width="2" height="8" fill="#fbbf24" opacity="0.8"/><!-- vert bar of cross -->
+              <rect x="28" y="10" width="8" height="2" fill="#fbbf24" opacity="0.8"/><!-- horiz bar -->
+              <rect x="20" y="14" width="3" height="3" fill="#c8ff00" opacity="0.9"/>
+              <rect x="21" y="13" width="1" height="5" fill="#c8ff00" opacity="0.7"/>
+              <rect x="19" y="15" width="5" height="1" fill="#c8ff00" opacity="0.7"/>
+            </g>
+
+            <!-- ── ZZZ (hidden) ── -->
+            <g id="foxZzz" opacity="0">
+              <text x="56" y="14" font-size="6"  fill="#a78bfa" font-family="monospace" font-weight="700">z</text>
+              <text x="60" y="10" font-size="8"  fill="#a78bfa" font-family="monospace" font-weight="700">z</text>
+              <text x="65" y="5"  font-size="10" fill="#a78bfa" font-family="monospace" font-weight="700">z</text>
+            </g>
+
+          </svg>
+        </div>
       </div>
     </div>
   </div>
@@ -1696,66 +1780,85 @@ function renderAll(fest) {
 
 // ─── FOX CHARACTER ────────────────────────────────────────
 function updateFox() {
-  const fox    = document.getElementById('foxChar');
-  const svgEl  = document.getElementById('foxSvg');
-  const label  = document.getElementById('foxMoodLabel');
-  const sweat  = document.getElementById('foxSweat');
-  const spark  = document.getElementById('foxSparkle');
-  const zzz    = document.getElementById('foxZzz');
-  const mouth  = document.getElementById('foxMouth');
-  const eye    = document.getElementById('foxEye');
-  if (!fox) return;
+  const fox   = document.getElementById('foxChar');
+  const label = document.getElementById('foxMoodLabel');
+  if (!fox || !label) return;
+
+  const sweat   = document.getElementById('foxSweat');
+  const spark   = document.getElementById('foxSparkle');
+  const zzz     = document.getElementById('foxZzz');
+  const eyelid  = document.getElementById('foxEyelid');
+  const mouthL  = document.getElementById('foxMouthL');
+  const mouthM  = document.getElementById('foxMouthM');
+  const mouthR  = document.getElementById('foxMouthR');
+  const svgEl   = document.getElementById('foxSvg');
 
   const b    = appScriptData.budget || {};
   const dte  = n(b.DTE);
   const bepP = n(b['BEP__%']) * 100;
   const soP  = n(b['SO_%'])  * 100;
 
-  // Determine mood
-  let mood = 'walk', moodText = '', showSweat = false, showSpark = false, showZzz = false;
-  let mouthPath = 'M47 29 Q49 31 51 29'; // smile
-  let eyeRy = 2.5; // normal
+  // Defaults
+  let mood = 'idle', moodText = '';
+  let showSweat = false, showSpark = false, showZzz = false;
+  // mouth: 'smile'=curve-up, 'flat'=neutral, 'frown'=curve-down
+  let mouthShape = 'smile';
+  // eyelid 0=open, 1=half, 2=closed
+  let eyeClose = 0;
 
   if (soP >= 100) {
-    mood = 'celebrate'; moodText = '🎉 SOLD OUT!!'; showSpark = true;
-    mouthPath = 'M46 28 Q49 32 52 28';
+    mood = 'celebrate'; moodText = '🎉 SOLD OUT!!'; showSpark = true; mouthShape = 'smile';
   } else if (dte <= 0) {
-    mood = 'celebrate'; moodText = '🎊 EVENT DAY!'; showSpark = true;
+    mood = 'celebrate'; moodText = '🎊 EVENT DAY!'; showSpark = true; mouthShape = 'smile';
   } else if (dte <= 3) {
-    mood = 'panic'; moodText = '😱 3 DAYS LEFT!!'; showSweat = true;
-    mouthPath = 'M47 30 Q49 28 51 30'; eyeRy = 3.2;
+    mood = 'panic'; moodText = '😱 3 DAYS LEFT!!'; showSweat = true; mouthShape = 'frown'; eyeClose = 1;
   } else if (dte <= 7) {
-    mood = 'panic'; moodText = '🔥 ONE WEEK LEFT'; showSweat = true;
-    mouthPath = 'M47 29 Q49 27 51 29';
+    mood = 'panic'; moodText = '🔥 ONE WEEK LEFT'; showSweat = true; mouthShape = 'flat';
   } else if (dte <= 14) {
-    mood = 'run'; moodText = '⚡ CRUNCH TIME';
-    mouthPath = 'M47 29 Q49 30 51 29';
+    mood = 'run'; moodText = '⚡ CRUNCH TIME'; mouthShape = 'flat';
   } else if (dte <= 30) {
-    mood = 'trot'; moodText = bepP < 90 ? '😬 Need more tickets' : '👟 On track';
+    if (bepP < 90) { mood = 'trot'; moodText = '😬 Need more tickets'; mouthShape = 'flat'; }
+    else           { mood = 'trot'; moodText = '👟 On track';           mouthShape = 'smile'; }
   } else if (dte > 60) {
-    mood = 'sleep'; moodText = '😴 Event far away'; showZzz = true;
-    mouthPath = 'M48 29 Q49 30 50 29'; eyeRy = 0.5;
+    mood = 'sleep'; moodText = '😴 Far away'; showZzz = true; eyeClose = 2; mouthShape = 'flat';
   } else {
-    mood = 'walk';
-    if (bepP >= 100) { moodText = '😊 BEP reached!'; showSpark = true; }
-    else if (bepP < 80) { mood = 'worried'; moodText = '😟 Below BEP'; mouthPath = 'M47 30 Q49 28 51 30'; }
-    else { moodText = '🦊 Steady pace'; }
+    if (soP >= 80)      { mood = 'walk'; moodText = '😊 BEP reached!'; showSpark = true; mouthShape = 'smile'; }
+    else if (bepP < 80) { mood = 'worried'; moodText = '😟 Below BEP'; mouthShape = 'frown'; }
+    else                { mood = 'idle';  moodText = '🦊 Steady pace';  mouthShape = 'smile'; }
   }
 
-  // Apply classes
+  // Apply animation class
   fox.className = 'fox-' + mood;
+
+  // Mood label
   label.textContent = moodText;
   label.style.opacity = moodText ? '1' : '0';
-  sweat.setAttribute('opacity', showSweat ? '1' : '0');
-  spark.setAttribute('opacity', showSpark ? '1' : '0');
-  zzz.setAttribute('opacity', showZzz ? '1' : '0');
 
-  // Eye + mouth
-  eye.setAttribute('ry', eyeRy);
-  mouth.setAttribute('d', mouthPath);
+  // Overlays
+  if (sweat)  sweat.setAttribute('opacity',  showSweat ? '1' : '0');
+  if (spark)  spark.setAttribute('opacity',  showSpark ? '1' : '0');
+  if (zzz)    zzz.setAttribute('opacity',    showZzz   ? '1' : '0');
 
-  // Flip fox to face right (default) or jiggle during panic
-  svgEl.style.transform = mood === 'sleep' ? 'scaleY(-1)' : '';
+  // Eyelid (pixel-art: cover top of eye rect to simulate closing)
+  if (eyelid) eyelid.setAttribute('height', eyeClose === 2 ? '6' : eyeClose === 1 ? '3' : '0');
+
+  // Mouth rects: smile / flat / frown
+  // mouthL = left corner, mouthM = middle bar, mouthR = right corner
+  if (mouthL && mouthM && mouthR) {
+    if (mouthShape === 'smile') {
+      mouthL.setAttribute('y','30'); mouthR.setAttribute('y','30');
+      mouthM.setAttribute('y','32'); mouthM.setAttribute('width','4');
+    } else if (mouthShape === 'frown') {
+      mouthL.setAttribute('y','32'); mouthR.setAttribute('y','32');
+      mouthM.setAttribute('y','30'); mouthM.setAttribute('width','4');
+    } else {
+      mouthL.setAttribute('y','31'); mouthR.setAttribute('y','31');
+      mouthM.setAttribute('y','31'); mouthM.setAttribute('width','4');
+    }
+  }
+
+  // Sleep: tilt fox on its side
+  if (svgEl) svgEl.style.transform = mood === 'sleep' ? 'rotate(20deg)' : '';
 }
 
 // ─── TICKETS ────────────────────────────────────────────
