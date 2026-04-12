@@ -2350,11 +2350,13 @@ function renderBudget() {
   }
 
   // ── Revenue %: trust sheet cells directly (BEP_%_revenue, SO_%_revenue stored as decimals) ──
-  // Only fall back to computed if sheet cell is empty/0
+  // Fall back chain: sheet cell → derived from revCur/revBEP → proxy from ticket % (revenue ∝ tickets)
   const sheetBEPr = get('BEP_%_revenue') * 100;
   const sheetSOr  = get('SO_%_revenue')  * 100;
-  const pctBEPr = sheetBEPr || (revBEP > 0 && revCur > 0 ? (revCur / revBEP * 100) : 0);
-  const pctSOr  = sheetSOr;
+  const pctBEPr = sheetBEPr
+    || (revBEP > 0 && revCur > 0 ? (revCur / revBEP * 100) : 0)
+    || pctBEPt;
+  const pctSOr = sheetSOr || pctSOt;
 
   const el = id => document.getElementById(id);
 
@@ -2897,9 +2899,16 @@ function renderGlance(fest) {
   }
   document.getElementById('gBEPproj').textContent = projText;
 
-  // TPD SO and BEP (no decimals)
+  // TPD SO and BEP (no decimals) — show ✓ when target is reached
   document.getElementById('gTPDSO').textContent = n(b.TPD_SO) ? Math.round(n(b.TPD_SO)).toLocaleString() : '—';
-  document.getElementById('gTPDBEP').textContent = n(b.TPD_BEP) ? Math.round(n(b.TPD_BEP)).toLocaleString() : '—';
+  const gTPDBEPel = document.getElementById('gTPDBEP');
+  if (bepRemaining <= 0) {
+    gTPDBEPel.textContent = '✓';
+    gTPDBEPel.style.color = 'var(--green)';
+  } else {
+    gTPDBEPel.textContent = n(b.TPD_BEP) ? Math.round(n(b.TPD_BEP)).toLocaleString() : '—';
+    gTPDBEPel.style.color = '';
+  }
 }
 
 function toggleDetails() {
