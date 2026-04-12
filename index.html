@@ -2355,8 +2355,11 @@ function renderBudget() {
 
   const el = id => document.getElementById(id);
 
-  // TPD BEP
-  if (tpdBEP && el('kTPDBEP')) el('kTPDBEP').textContent = tpdBEP.toFixed(1);
+  // TPD BEP — show value if available, show "✓" when BEP reached and no more needed
+  if (el('kTPDBEP')) {
+    if (tpdBEP > 0) el('kTPDBEP').textContent = tpdBEP.toFixed(1);
+    else if (tickBEPr <= 0) { el('kTPDBEP').textContent = '✓'; el('kTPDBEP').style.color = 'var(--green)'; }
+  }
 
   // BEP tickets card — uncapped, green when over
   setPctText('kBEPpct', pctBEPt);
@@ -2396,18 +2399,24 @@ function renderBudget() {
     }
   }
 
-  // BEP revenue card — uncapped, green when over
-  if (pctBEPr) {
-    setPctText('kBEPrevPct', pctBEPr);
-    setBar('barBEPrev', pctBEPr);
-    if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
+  // BEP revenue card
+  // revenue_current can be negative pre-event; still show it
+  // Use BEP_%_revenue from sheet if direct calculation unavailable
+  const pctBEPrDisplay = pctBEPr !== 0 ? pctBEPr : (get('BEP_%_revenue') * 100);
+  if (el('kBEPrevPct')) {
+    if (pctBEPrDisplay) {
+      setPctText('kBEPrevPct', pctBEPrDisplay);
+    } else {
+      el('kBEPrevPct').textContent = revCur ? (revCur < 0 ? '₪' + Math.round(revCur).toLocaleString() : '0.0%') : '—';
+    }
   }
+  setBar('barBEPrev', Math.max(0, pctBEPrDisplay));
+  if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
 
-  // SO revenue card — uncapped
-  if (pctSOr) {
-    setPctText('kSOrevPct', pctSOr);
-    setBar('barSOrev', pctSOr);
-  }
+  // SO revenue card — use SO_%_revenue from sheet, or fall back to SO tickets %
+  const pctSOrevDisplay = pctSOr || pctSOt;
+  setPctText('kSOrevPct', pctSOrevDisplay);
+  setBar('barSOrev', pctSOrevDisplay);
 }
 
 // ─── META ────────────────────────────────────────────────
@@ -2840,14 +2849,11 @@ function renderGlance(fest) {
   const prevCum = n(data[todayRow]?.[prevEvt.cumCol]);
   const compareEl = document.getElementById('gCompare');
   if (prevCum > 0) {
-    const diff = ((projected - prevCum) / prevCum * 100);
-    if (diff >= 0) {
-      compareEl.className = 'glance-compare up';
-      compareEl.textContent = '+' + diff.toFixed(0) + '% vs DB25 Nov';
-    } else {
-      compareEl.className = 'glance-compare down';
-      compareEl.textContent = diff.toFixed(0) + '% vs DB25 Nov';
-    }
+    const diff = (projected - prevCum) / prevCum * 100;
+    const absDiff = Math.abs(diff);
+    const diffStr = absDiff < 0.5 ? '~0' : (diff > 0 ? '+' : '-') + absDiff.toFixed(0);
+    compareEl.className = diff >= 0.5 ? 'glance-compare up' : diff <= -0.5 ? 'glance-compare down' : 'glance-compare';
+    compareEl.textContent = diffStr + '% vs DB25 Nov';
   } else {
     compareEl.textContent = '';
   }
