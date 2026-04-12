@@ -2299,52 +2299,84 @@ function renderBudget() {
 
   const get = k => n(b[k]);
   const tickCur  = get('tickets_current');
-  const tickBEP  = get('tickets_BEP');
-  const tickSO   = get('tickets_SO');
+  const tickBEPr = get('tickets_BEP');   // remaining tickets to BEP (0 or neg = reached)
+  const tickSO   = get('tickets_SO');    // remaining tickets to SO
   const tpdSO    = get('TPD_SO');
   const tpdBEP   = get('TPD_BEP');
-  // Percentages come as decimals (0.75 = 75%), multiply by 100
-  const pctBEPt  = get('BEP__%') * 100;
-  const pctSOt   = get('SO_%') * 100;
-  const pctBEPr  = get('BEP_%_revenue') * 100;
-  const pctSOr   = get('SO_%_revenue') * 100;
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
 
-  if (tpdBEP && document.getElementById('kTPDBEP')) document.getElementById('kTPDBEP').textContent = tpdBEP.toFixed(1);
+  // ── BEP % (tickets): derive from current/remaining, don't trust raw cell ──
+  // tickBEPr > 0  → still working toward BEP, target = tickCur + tickBEPr
+  // tickBEPr <= 0 → BEP reached or exceeded, clamp to 100%+
+  let pctBEPt;
+  if (tickBEPr > 0) {
+    const bepTarget = tickCur + tickBEPr;
+    pctBEPt = bepTarget > 0 ? (tickCur / bepTarget * 100) : 0;
+  } else {
+    // Use raw sheet value floored at 100 to show ≥100% when over
+    pctBEPt = Math.max(get('BEP__%') * 100, 100);
+  }
 
-  if (pctBEPt) {
-    if (document.getElementById('kBEPpct')) document.getElementById('kBEPpct').textContent = pctBEPt.toFixed(1) + '%';
-    if (document.getElementById('barBEP')) document.getElementById('barBEP').style.width = Math.min(pctBEPt,100) + '%';
-    if (document.getElementById('kBEPtarget')) document.getElementById('kBEPtarget').textContent = tickBEP ? Math.round(tickBEP).toLocaleString() : '—';
-    if (tickCur && tickBEP && document.getElementById('kBEPactual')) {
-      document.getElementById('kBEPactual').textContent =
-        Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickBEP).toLocaleString() + ' tickets';
+  // ── SO % (tickets): same pattern ──
+  let pctSOt;
+  if (tickSO > 0) {
+    const soTarget = tickCur + tickSO;
+    pctSOt = soTarget > 0 ? (tickCur / soTarget * 100) : 0;
+  } else {
+    pctSOt = Math.max(get('SO_%') * 100, 100);
+  }
+
+  // ── Revenue %: derive directly from revenue_current / revenue_BEP ──
+  // Falls back to sheet cell if direct calculation not available
+  let pctBEPr = revBEP > 0 ? (revCur / revBEP * 100) : (get('BEP_%_revenue') * 100);
+  let pctSOr  = get('SO_%_revenue') * 100; // SO revenue target often not in feed; show if available
+
+  const el = id => document.getElementById(id);
+
+  // TPD BEP
+  if (tpdBEP && el('kTPDBEP')) el('kTPDBEP').textContent = tpdBEP.toFixed(1);
+
+  // BEP tickets card
+  if (el('kBEPpct'))    el('kBEPpct').textContent   = pctBEPt.toFixed(1) + '%';
+  if (el('barBEP'))     el('barBEP').style.width     = Math.min(pctBEPt, 100) + '%';
+  if (el('kBEPtarget')) el('kBEPtarget').textContent = tickBEPr > 0
+    ? Math.round(tickCur + tickBEPr).toLocaleString()
+    : (tickCur ? Math.round(tickCur).toLocaleString() : '—');
+  if (el('kBEPactual')) el('kBEPactual').textContent = tickBEPr <= 0
+    ? '✓ BEP reached'
+    : Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickCur + tickBEPr).toLocaleString() + ' tickets';
+
+  // SO tickets card
+  if (el('kSOpct'))    el('kSOpct').textContent   = pctSOt.toFixed(1) + '%';
+  if (el('barSO'))     el('barSO').style.width     = Math.min(pctSOt, 100) + '%';
+  if (el('kSOtarget')) el('kSOtarget').textContent = tickSO > 0
+    ? Math.round(tickCur + tickSO).toLocaleString()
+    : (tickCur ? Math.round(tickCur).toLocaleString() : '—');
+
+  // PPC budget
+  const ppcSpent = n(b.ppc_budget);
+  const ppcTotal = n(b.ppc_budget_total);
+  if (ppcSpent || ppcTotal) {
+    if (el('kPPCBudgetNow')) el('kPPCBudgetNow').textContent = '₪' + Math.round(ppcSpent).toLocaleString() + (ppcTotal ? ' / ₪' + Math.round(ppcTotal).toLocaleString() : '');
+    if (ppcTotal) {
+      const ppcPct = ppcSpent / ppcTotal * 100;
+      if (el('barPPCBudget')) el('barPPCBudget').style.width = Math.min(ppcPct, 100) + '%';
+      if (el('kPPCBudgetTotal')) el('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
     }
   }
 
-  // PPC budget (C25: spent, C26: total)
-  const ppcSpent = n(b.ppc_budget);
-  const ppcTotal = n(b.ppc_budget_total);
-  if (ppcSpent && ppcTotal) {
-    if (document.getElementById('kPPCBudgetNow')) document.getElementById('kPPCBudgetNow').textContent = '₪' + Math.round(ppcSpent).toLocaleString() + ' / ₪' + Math.round(ppcTotal).toLocaleString();
-    const ppcPct = (ppcSpent / ppcTotal * 100);
-    if (document.getElementById('barPPCBudget')) document.getElementById('barPPCBudget').style.width = Math.min(ppcPct, 100) + '%';
-    if (document.getElementById('kPPCBudgetTotal')) document.getElementById('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
-  }
-  if (pctSOt) {
-    if (document.getElementById('kSOpct')) document.getElementById('kSOpct').textContent = pctSOt.toFixed(1) + '%';
-    if (document.getElementById('barSO')) document.getElementById('barSO').style.width = Math.min(pctSOt,100) + '%';
-    if (document.getElementById('kSOtarget')) document.getElementById('kSOtarget').textContent = tickSO ? Math.round(tickSO).toLocaleString() : '—';
-  }
+  // BEP revenue card
   if (pctBEPr) {
-    if (document.getElementById('kBEPrevPct')) document.getElementById('kBEPrevPct').textContent = pctBEPr.toFixed(1) + '%';
-    if (document.getElementById('barBEPrev')) document.getElementById('barBEPrev').style.width = Math.min(pctBEPr,100) + '%';
-    if (document.getElementById('kBEPrevTarget')) document.getElementById('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
+    if (el('kBEPrevPct'))    el('kBEPrevPct').textContent    = pctBEPr.toFixed(1) + '%';
+    if (el('barBEPrev'))     el('barBEPrev').style.width      = Math.min(pctBEPr, 100) + '%';
+    if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent  = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
   }
+
+  // SO revenue card (optional — only if data present)
   if (pctSOr) {
-    if (document.getElementById('kSOrevPct')) document.getElementById('kSOrevPct').textContent = pctSOr.toFixed(1) + '%';
-    if (document.getElementById('barSOrev')) document.getElementById('barSOrev').style.width = Math.min(pctSOr,100) + '%';
+    if (el('kSOrevPct')) el('kSOrevPct').textContent = pctSOr.toFixed(1) + '%';
+    if (el('barSOrev'))  el('barSOrev').style.width   = Math.min(pctSOr, 100) + '%';
   }
 }
 
