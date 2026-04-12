@@ -719,6 +719,9 @@ body::before {
 @keyframes foxBobFast    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
 @keyframes foxPanicShake { 0%{transform:translate(0,0)} 18%{transform:translate(-7px,-9px)rotate(-4deg)} 36%{transform:translate(8px,-7px)rotate(4deg)} 54%{transform:translate(-6px,-10px)rotate(-3deg)} 72%{transform:translate(7px,-6px)rotate(3deg)} 100%{transform:translate(0,0)} }
 @keyframes foxRunOsc     { 0%,100%{transform:translateX(-16px)} 50%{transform:translateX(16px)} }
+@keyframes foxDrift      { 0%{transform:translateX(-80px)} 50%{transform:translateX(80px)} 100%{transform:translateX(-80px)} }
+@keyframes foxDriftFast  { 0%{transform:translateX(-80px)} 50%{transform:translateX(80px)} 100%{transform:translateX(-80px)} }
+@keyframes foxDriftPanic { 0%{transform:translateX(-70px)} 25%{transform:translateX(70px)} 50%{transform:translateX(-60px)} 75%{transform:translateX(65px)} 100%{transform:translateX(-70px)} }
 @keyframes foxJump       { 0%,100%{transform:translateY(0)scale(1)} 35%{transform:translateY(-22px)scale(0.94,1.1)} 60%{transform:translateY(-12px)scale(1)} }
 @keyframes foxSleepBob   { 0%,100%{transform:scaleY(1)translateY(0)} 50%{transform:scaleY(0.92)translateY(4px)} }
 @keyframes foxTailWag    { 0%,100%{transform:rotate(0deg)} 50%{transform:rotate(28deg)} }
@@ -913,8 +916,8 @@ body::before {
       <button class="icon-btn" onclick="openSettings()">⚙ SETTINGS</button>
     </div>
     <!-- FOX CHARACTER — sits in the topbar centre space between badge and right buttons -->
-    <div id="foxWrap" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;min-width:200px">
-      <div style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px">
+    <div id="foxWrap" style="position:absolute;top:0;left:50%;transform:translateX(-50%);height:100%;display:flex;align-items:flex-end;justify-content:center;pointer-events:none;width:340px;overflow:visible">
+      <div id="foxDrift" style="display:flex;flex-direction:column;align-items:center;gap:2px;padding-bottom:6px;animation:foxDrift 14s ease-in-out infinite">
         <div id="foxMoodLabel" style="font-size:0.55rem;font-family:'JetBrains Mono',monospace;color:rgba(255,180,80,0.9);white-space:nowrap;letter-spacing:0.05em;opacity:0;transition:opacity 0.5s;height:12px;text-align:center"></div>
         <div id="foxChar" class="fox-idle">
           <!-- pixel-art fox SVG 72×64 grid-aligned -->
@@ -1597,10 +1600,6 @@ const compTodayPlugin = {
     ctx.lineTo(x, chartArea.bottom);
     ctx.stroke();
     ctx.setLineDash([]);
-    ctx.fillStyle = 'rgba(255, 100, 100, 0.85)';
-    ctx.font = 'bold 9px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    ctx.fillText('TODAY', x, chartArea.top - 4);
     ctx.restore();
   }
 };
@@ -1859,6 +1858,42 @@ function updateFox() {
 
   // Sleep: tilt fox on its side
   if (svgEl) svgEl.style.transform = mood === 'sleep' ? 'rotate(20deg)' : '';
+
+  // Drift speed + fox facing direction
+  const drift = document.getElementById('foxDrift');
+  if (drift) {
+    const speeds = { idle:'18s', walk:'14s', trot:'9s', run:'5s', panic:'2.8s', sleep:'30s', celebrate:'7s', worried:'16s' };
+    const spd = speeds[mood] || '14s';
+    const animName = mood === 'panic' ? 'foxDriftPanic' : mood === 'run' ? 'foxDriftFast' : 'foxDrift';
+    drift.style.animation = `${animName} ${spd} ease-in-out infinite`;
+  }
+  // Flip SVG to face direction of travel (mirror at midpoint)
+  if (svgEl && mood !== 'sleep') {
+    // JS-driven direction flip based on drift phase — use a simple alternating timer
+    if (!fox._flipTimer) {
+      fox._flipTimer = setInterval(() => {
+        if (!document.getElementById('foxChar')) { clearInterval(fox._flipTimer); return; }
+        const d = document.getElementById('foxDrift');
+        if (!d) return;
+        const cur = getComputedStyle(d).transform;
+        // parse translateX from matrix
+        const m = cur.match(/matrix.*\((.+)\)/);
+        if (m) {
+          const vals = m[1].split(',');
+          const tx = parseFloat(vals[4] || 0);
+          // face left (flipped) when moving left (tx going negative relative to centre)
+          if (fox._lastTx !== undefined) {
+            const svg = document.getElementById('foxSvg');
+            if (svg) svg.style.transform = (tx < fox._lastTx) ? 'scaleX(-1)' : '';
+          }
+          fox._lastTx = tx;
+        }
+      }, 300);
+    }
+  } else if (fox._flipTimer && mood === 'sleep') {
+    clearInterval(fox._flipTimer);
+    fox._flipTimer = null;
+  }
 }
 
 // ─── TICKETS ────────────────────────────────────────────
