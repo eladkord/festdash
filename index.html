@@ -3102,9 +3102,15 @@ function renderInsights(fest) {
   s1Bullets.push(`Currently <strong>${tickCur.toLocaleString()}</strong> sold — <strong>${tickSOrem.toLocaleString()}</strong> remaining to sell out`);
   s1Bullets.push(`At current 7-day pace (${avg7}/day), sell-out in <strong>${daysToSO > dte ? 'NOT POSSIBLE' : daysToSO + ' days'}</strong>`);
   if (vsPrevNow !== null) s1Bullets.push(`vs DB25 Nov at same stage: <strong>${vsPrevNow >= 0 ? '+' : ''}${vsPrevNow.toFixed(0)}%</strong> (they had ${prevNow.toLocaleString()})`);
-  const s1Rec = neededPD > avg7
-    ? `⚡ Need ${neededPD}/day to sell out. Boost by ${neededPD - avg7} tickets/day via Meta or organic push.`
-    : `✅ Pace is sufficient to reach sell-out — maintain momentum.`;
+  if (hasSpike) {
+    const spikeCanSO = projIfSpikePct >= 100;
+    s1Bullets.push(`<strong>📈 Rising trend:</strong> last few days averaging <strong>${Math.round(spikeAvgDay)}/day</strong> vs 7d avg of ${avg7} — if this holds, projected finish: <strong>${projIfSpike.toLocaleString()} (${projIfSpikePct.toFixed(0)}% SO)</strong>${spikeCanSO ? ' — 🎉 sell out possible!' : ''}`);
+  }
+  const s1Rec = hasSpike
+    ? `🚀 Momentum is building right in the final window — sustain this pace and ${projIfSpikePct >= 100 ? 'sell out is within reach' : `you close to ${projIfSpikePct.toFixed(0)}% SO`}. Push ads + urgency messaging now.`
+    : neededPD > avg7
+      ? `⚡ Need ${neededPD}/day to sell out. Boost by ${neededPD - avg7} tickets/day via Meta or organic push.`
+      : `✅ Pace is sufficient to reach sell-out — maintain momentum.`;
   insights.push({ title: 'Sales Velocity', color: s1Color, colorLine: projSOPct >= 90 ? 'tl-green' : projSOPct >= 70 ? 'tl-yellow' : 'tl-red', status: s1Status, bullets: s1Bullets, rec: s1Rec });
 
   // ── INSIGHT 2: Meta Campaign ──
@@ -3123,6 +3129,25 @@ function renderInsights(fest) {
     : `✅ Meta is running efficiently below the ₪50 CPL target — scale spend if inventory allows.`;
   insights.push({ title: 'Meta Campaign', color: s2Color, colorLine: cplAvg <= CPL_GOAL ? 'tl-green' : cplAvg <= CPL_GOAL * 1.6 ? 'tl-orange' : 'tl-red', status: s2Status, bullets: s2Bullets, rec: s2Rec });
 
+  // ── Momentum Spike detection (feeds into existing cards below) ──
+  // 7-18 days out + 3-5 day consistent spike above 7d avg = rising trend
+  let hasSpike = false, spikeAvgDay = 0, projIfSpike = 0, projIfSpikePct = 0;
+  if (dte >= 7 && dte <= 18) {
+    const recentDeltas = [];
+    for (let r = Math.max(FEED.tickets.dataStartRow, todayRow - 4); r <= todayRow; r++) {
+      const d = n(data[r]?.[cur.deltaCol]);
+      if (d > 0) recentDeltas.push(d);
+    }
+    if (recentDeltas.length >= 3) {
+      spikeAvgDay = recentDeltas.reduce((a,b) => a+b) / recentDeltas.length;
+      if (spikeAvgDay > avg7 * 1.2) {
+        hasSpike = true;
+        projIfSpike    = Math.round(tickCur + spikeAvgDay * dte);
+        projIfSpikePct = soTarget ? (projIfSpike / soTarget * 100) : 0;
+      }
+    }
+  }
+
   // ── INSIGHT 3: Strategic Overview ──
   const campaignPhase = dte > 30 ? 'EARLY STAGE' : dte > 14 ? 'MID CAMPAIGN' : dte > 7 ? 'FINAL STRETCH' : 'CRITICAL ZONE';
   const phaseColor    = dte > 14 ? '#38bdf8' : dte > 7 ? '#fbbf24' : '#f87171';
@@ -3132,9 +3157,15 @@ function renderInsights(fest) {
   if (vsPrevNow !== null) s3Bullets.push(`Currently ${Math.abs(vsPrevNow).toFixed(0)}% ${vsPrevNow >= 0 ? 'ahead of' : 'behind'} DB25 Nov at this stage`);
   const revenueNote = n(b.revenue_current);
   if (revenueNote < 0) s3Bullets.push(`Revenue is <strong>₪${Math.abs(revenueNote).toLocaleString()} below</strong> current spend (pre-event — normal)`);
-  const s3Rec = dte <= 14
-    ? `🔥 Final stretch — urgency messaging ("${dte} days left!") typically lifts conversion 20-40%. Push hard now.`
-    : `📊 ${dte} days out — steady growth phase. Focus on CPL efficiency and organic word-of-mouth.`;
+  if (hasSpike) {
+    s3Bullets.push(`<strong>📈 Momentum spike:</strong> sales pace jumped to ~${Math.round(spikeAvgDay)}/day — 7d avg (${avg7}/day) underestimates current trajectory`);
+    s3Bullets.push(`If spike holds: <strong>${projIfSpike.toLocaleString()} tickets (${projIfSpikePct.toFixed(0)}% SO)</strong> vs current 7d projection of ${projected.toLocaleString()}`);
+  }
+  const s3Rec = hasSpike
+    ? `🔥 You're in the momentum window (${dte} days out) with a real sales spike. The 7d avg lags behind — actual trajectory is better than it looks. ${projIfSpikePct >= 100 ? 'SO is realistic if you maintain this.' : `Close to SO if pace holds — this is the moment to go all-in.`}`
+    : dte <= 14
+      ? `🔥 Final stretch — urgency messaging ("${dte} days left!") typically lifts conversion 20-40%. Push hard now.`
+      : `📊 ${dte} days out — steady growth phase. Focus on CPL efficiency and organic word-of-mouth.`;
   insights.push({ title: 'Strategic Overview', color: phaseColor, colorLine: dte > 14 ? 'tl-blue' : dte > 7 ? 'tl-yellow' : 'tl-red', status: campaignPhase, bullets: s3Bullets, rec: s3Rec });
 
   // Render
