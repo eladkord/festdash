@@ -3091,7 +3091,26 @@ function renderInsights(fest) {
   const vsPrevNow   = prevNow > 0 ? ((tickCur - prevNow) / prevNow * 100) : null;
   const vsPrevFinal = prevFinal > 0 ? ((projected - prevFinal) / prevFinal * 100) : null;
 
-  // Build 3 insight cards
+  // ── Momentum Spike detection (feeds into existing cards below) ──
+  // 7-18 days out + 3-5 day consistent spike above 7d avg = rising trend
+  let hasSpike = false, spikeAvgDay = 0, projIfSpike = 0, projIfSpikePct = 0;
+  if (dte >= 7 && dte <= 18) {
+    const recentDeltas = [];
+    for (let r = Math.max(FEED.tickets.dataStartRow, todayRow - 4); r <= todayRow; r++) {
+      const d = n(data[r]?.[cur.deltaCol]);
+      if (d > 0) recentDeltas.push(d);
+    }
+    if (recentDeltas.length >= 3) {
+      spikeAvgDay = recentDeltas.reduce((a,b) => a+b) / recentDeltas.length;
+      if (spikeAvgDay > avg7 * 1.2) {
+        hasSpike = true;
+        projIfSpike    = Math.round(tickCur + spikeAvgDay * dte);
+        projIfSpikePct = soTarget ? (projIfSpike / soTarget * 100) : 0;
+      }
+    }
+  }
+
+  // Build insight cards
   const insights = [];
 
   // ── INSIGHT 1: Sales Velocity ──
@@ -3128,25 +3147,6 @@ function renderInsights(fest) {
     ? `⚡ CPL is ₪${(cplAvg - CPL_GOAL).toFixed(0)} over goal. Test new creatives, tighter audiences, or retargeting to bring cost down.`
     : `✅ Meta is running efficiently below the ₪50 CPL target — scale spend if inventory allows.`;
   insights.push({ title: 'Meta Campaign', color: s2Color, colorLine: cplAvg <= CPL_GOAL ? 'tl-green' : cplAvg <= CPL_GOAL * 1.6 ? 'tl-orange' : 'tl-red', status: s2Status, bullets: s2Bullets, rec: s2Rec });
-
-  // ── Momentum Spike detection (feeds into existing cards below) ──
-  // 7-18 days out + 3-5 day consistent spike above 7d avg = rising trend
-  let hasSpike = false, spikeAvgDay = 0, projIfSpike = 0, projIfSpikePct = 0;
-  if (dte >= 7 && dte <= 18) {
-    const recentDeltas = [];
-    for (let r = Math.max(FEED.tickets.dataStartRow, todayRow - 4); r <= todayRow; r++) {
-      const d = n(data[r]?.[cur.deltaCol]);
-      if (d > 0) recentDeltas.push(d);
-    }
-    if (recentDeltas.length >= 3) {
-      spikeAvgDay = recentDeltas.reduce((a,b) => a+b) / recentDeltas.length;
-      if (spikeAvgDay > avg7 * 1.2) {
-        hasSpike = true;
-        projIfSpike    = Math.round(tickCur + spikeAvgDay * dte);
-        projIfSpikePct = soTarget ? (projIfSpike / soTarget * 100) : 0;
-      }
-    }
-  }
 
   // ── INSIGHT 3: Strategic Overview ──
   const campaignPhase = dte > 30 ? 'EARLY STAGE' : dte > 14 ? 'MID CAMPAIGN' : dte > 7 ? 'FINAL STRETCH' : 'CRITICAL ZONE';
