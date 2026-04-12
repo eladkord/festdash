@@ -3094,7 +3094,7 @@ function renderInsights(fest) {
   // ── Momentum Spike detection (feeds into existing cards below) ──
   // 7-18 days out + 3-5 day consistent spike above 7d avg = rising trend
   let hasSpike = false, spikeAvgDay = 0, projIfSpike = 0, projIfSpikePct = 0;
-  if (dte >= 7 && dte <= 18) {
+  if (dte >= 2 && dte <= 14) {
     const recentDeltas = [];
     for (let r = Math.max(FEED.tickets.dataStartRow, todayRow - 4); r <= todayRow; r++) {
       const d = n(data[r]?.[cur.deltaCol]);
