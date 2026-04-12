@@ -451,6 +451,9 @@ body::before {
 .pf-green { background: linear-gradient(90deg, rgba(74,222,128,0.3), var(--green)); box-shadow: 0 0 10px rgba(74,222,128,0.2); }
 .pf-purple { background: linear-gradient(90deg, rgba(168,85,247,0.3), #a855f7); box-shadow: 0 0 10px rgba(168,85,247,0.2); }
 .pf-orange { background: linear-gradient(90deg, rgba(251,146,60,0.3), var(--orange)); box-shadow: 0 0 10px rgba(251,146,60,0.2); }
+/* Over 100% — bar turns full green with stronger glow */
+.pf-over { background: linear-gradient(90deg, rgba(74,222,128,0.5), var(--green)) !important; box-shadow: 0 0 18px rgba(74,222,128,0.55) !important; }
+.glance-prog-fill.pf-over { background: linear-gradient(90deg, rgba(74,222,128,0.4), var(--green)) !important; box-shadow: 0 0 16px rgba(74,222,128,0.5) !important; }
 
 /* ── CHART ── */
 .chart-container { position: relative; margin-top: 16px; }
@@ -2292,6 +2295,22 @@ function renderCompTable(data, todayRow, fest) {
   });
 }
 
+// ─── SHARED HELPERS ─────────────────────────────────────
+// Set a progress bar: fills to min(pct,100)% but turns green when over
+function setBar(id, pct) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.style.width = Math.min(pct, 100) + '%';
+  el.classList.toggle('pf-over', pct > 100);
+}
+// Set a percentage text element: green + "+" prefix when over 100
+function setPctText(id, pct, decimals = 1) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.textContent = (pct > 100 ? '+' : '') + pct.toFixed(decimals) + '%';
+  el.style.color = pct > 100 ? 'var(--green)' : '';
+}
+
 // ─── BUDGET ─────────────────────────────────────────────
 function renderBudget() {
   const b = appScriptData.budget;
@@ -2306,77 +2325,88 @@ function renderBudget() {
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
 
-  // ── BEP % (tickets): derive from current/remaining, don't trust raw cell ──
-  // tickBEPr > 0  → still working toward BEP, target = tickCur + tickBEPr
-  // tickBEPr <= 0 → BEP reached or exceeded, clamp to 100%+
+  // ── BEP % (tickets): derive from current vs target, uncapped ──
+  // tickBEPr from sheet = tickets still needed (positive) or overshoot (negative)
+  // true BEP target = tickCur + tickBEPr  (when tickBEPr > 0)
+  // when tickBEPr <= 0: BEP exceeded → real % = tickCur / (tickCur - tickBEPr) * 100 (>100)
+  const bepTarget = tickCur + (tickBEPr > 0 ? tickBEPr : 0) + Math.abs(tickBEPr > 0 ? 0 : tickBEPr);
+  // simpler: absolute BEP target is always tickCur + tickBEPr when > 0, else derive from sheet
   let pctBEPt;
   if (tickBEPr > 0) {
-    const bepTarget = tickCur + tickBEPr;
-    pctBEPt = bepTarget > 0 ? (tickCur / bepTarget * 100) : 0;
+    pctBEPt = (tickCur / (tickCur + tickBEPr)) * 100;
   } else {
-    // Use raw sheet value floored at 100 to show ≥100% when over
-    pctBEPt = Math.max(get('BEP__%') * 100, 100);
+    // Use the raw sheet BEP__% (stored as decimal), but never cap — let it be 105%, 120% etc
+    const rawPct = get('BEP__%') * 100;
+    // If sheet also shows <100 even though remaining=0, derive a minimum of 100
+    pctBEPt = rawPct >= 100 ? rawPct : (tickBEPr === 0 ? 100 : Math.max(rawPct, 100 + Math.abs(tickBEPr)));
   }
 
-  // ── SO % (tickets): same pattern ──
+  // ── SO % (tickets) ──
   let pctSOt;
   if (tickSO > 0) {
-    const soTarget = tickCur + tickSO;
-    pctSOt = soTarget > 0 ? (tickCur / soTarget * 100) : 0;
+    pctSOt = (tickCur / (tickCur + tickSO)) * 100;
   } else {
-    pctSOt = Math.max(get('SO_%') * 100, 100);
+    pctSOt = Math.max(get('SO_%') * 100, tickSO === 0 ? 100 : 100);
   }
 
-  // ── Revenue %: derive directly from revenue_current / revenue_BEP ──
-  // Falls back to sheet cell if direct calculation not available
-  let pctBEPr = revBEP > 0 ? (revCur / revBEP * 100) : (get('BEP_%_revenue') * 100);
-  let pctSOr  = get('SO_%_revenue') * 100; // SO revenue target often not in feed; show if available
+  // ── Revenue BEP %: derive from current / target ──
+  const pctBEPr = revBEP > 0 ? (revCur / revBEP * 100) : (get('BEP_%_revenue') * 100);
+  const pctSOr  = get('SO_%_revenue') * 100;
 
   const el = id => document.getElementById(id);
 
   // TPD BEP
   if (tpdBEP && el('kTPDBEP')) el('kTPDBEP').textContent = tpdBEP.toFixed(1);
 
-  // BEP tickets card
-  if (el('kBEPpct'))    el('kBEPpct').textContent   = pctBEPt.toFixed(1) + '%';
-  if (el('barBEP'))     el('barBEP').style.width     = Math.min(pctBEPt, 100) + '%';
+  // BEP tickets card — uncapped, green when over
+  setPctText('kBEPpct', pctBEPt);
+  setBar('barBEP', pctBEPt);
   if (el('kBEPtarget')) el('kBEPtarget').textContent = tickBEPr > 0
     ? Math.round(tickCur + tickBEPr).toLocaleString()
     : (tickCur ? Math.round(tickCur).toLocaleString() : '—');
-  if (el('kBEPactual')) el('kBEPactual').textContent = tickBEPr <= 0
-    ? '✓ BEP reached'
-    : Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickCur + tickBEPr).toLocaleString() + ' tickets';
+  if (el('kBEPactual')) {
+    if (tickBEPr < 0) {
+      el('kBEPactual').textContent = '+' + Math.abs(Math.round(tickBEPr)).toLocaleString() + ' over BEP';
+      el('kBEPactual').style.color = 'var(--green)';
+    } else if (tickBEPr === 0) {
+      el('kBEPactual').textContent = '✓ BEP reached';
+      el('kBEPactual').style.color = 'var(--green)';
+    } else {
+      el('kBEPactual').textContent = Math.round(tickCur).toLocaleString() + ' / ' + Math.round(tickCur + tickBEPr).toLocaleString() + ' tickets';
+      el('kBEPactual').style.color = '';
+    }
+  }
 
-  // SO tickets card
-  if (el('kSOpct'))    el('kSOpct').textContent   = pctSOt.toFixed(1) + '%';
-  if (el('barSO'))     el('barSO').style.width     = Math.min(pctSOt, 100) + '%';
+  // SO tickets card — uncapped
+  setPctText('kSOpct', pctSOt);
+  setBar('barSO', pctSOt);
   if (el('kSOtarget')) el('kSOtarget').textContent = tickSO > 0
     ? Math.round(tickCur + tickSO).toLocaleString()
     : (tickCur ? Math.round(tickCur).toLocaleString() : '—');
 
-  // PPC budget
+  // PPC budget — uncapped (overspend is orange)
   const ppcSpent = n(b.ppc_budget);
   const ppcTotal = n(b.ppc_budget_total);
   if (ppcSpent || ppcTotal) {
     if (el('kPPCBudgetNow')) el('kPPCBudgetNow').textContent = '₪' + Math.round(ppcSpent).toLocaleString() + (ppcTotal ? ' / ₪' + Math.round(ppcTotal).toLocaleString() : '');
     if (ppcTotal) {
       const ppcPct = ppcSpent / ppcTotal * 100;
-      if (el('barPPCBudget')) el('barPPCBudget').style.width = Math.min(ppcPct, 100) + '%';
+      setBar('barPPCBudget', ppcPct);
       if (el('kPPCBudgetTotal')) el('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
     }
   }
 
-  // BEP revenue card
+  // BEP revenue card — uncapped, green when over
   if (pctBEPr) {
-    if (el('kBEPrevPct'))    el('kBEPrevPct').textContent    = pctBEPr.toFixed(1) + '%';
-    if (el('barBEPrev'))     el('barBEPrev').style.width      = Math.min(pctBEPr, 100) + '%';
-    if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent  = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
+    setPctText('kBEPrevPct', pctBEPr);
+    setBar('barBEPrev', pctBEPr);
+    if (el('kBEPrevTarget')) el('kBEPrevTarget').textContent = revBEP ? '₪' + Math.round(revBEP).toLocaleString() : '—';
   }
 
-  // SO revenue card (optional — only if data present)
+  // SO revenue card — uncapped
   if (pctSOr) {
-    if (el('kSOrevPct')) el('kSOrevPct').textContent = pctSOr.toFixed(1) + '%';
-    if (el('barSOrev'))  el('barSOrev').style.width   = Math.min(pctSOr, 100) + '%';
+    setPctText('kSOrevPct', pctSOr);
+    setBar('barSOrev', pctSOr);
   }
 }
 
@@ -2414,14 +2444,13 @@ function renderMeta(fest) {
   set('kMetaCPLToday',  cplTod   ? '₪' + Math.round(cplTod) : null);
   set('kMetaCPL',       cplAvg   ? '₪' + cplAvg.toFixed(2) : null);
 
-  // Budget progress bar
+  // Budget progress bar — uncapped, over 100% turns green
   if (spend && ppcBudgetMax) {
-    const pct = (spend / ppcBudgetMax * 100).toFixed(0);
-    set('kBudgetPct', pct + '%');
+    const pct = spend / ppcBudgetMax * 100;
+    set('kBudgetPct', (pct > 100 ? '+' : '') + pct.toFixed(0) + '%');
     set('kBudgetSpent', '₪' + Math.round(spend).toLocaleString());
     set('kBudgetMax', '₪' + Math.round(ppcBudgetMax).toLocaleString());
-    const barEl = document.getElementById('barBudget');
-    if (barEl) barEl.style.width = Math.min(pct, 100) + '%';
+    setBar('barBudget', pct);
   }
 
   // Projected conversions until event (conv_avg_7d × DTE)
@@ -2795,8 +2824,8 @@ function renderGlance(fest) {
   // Now / SO
   document.getElementById('gSOnum').textContent = todayCum.toLocaleString() + ' / ' + soTarget.toLocaleString();
   const soPct = soTarget ? (todayCum / soTarget * 100) : 0;
-  document.getElementById('gSOpct').textContent = soPct.toFixed(1) + '%';
-  document.getElementById('gSObar').style.width = Math.min(soPct, 100) + '%';
+  setPctText('gSOpct', soPct);
+  setBar('gSObar', soPct);
   // SO remaining (in parentheses)
   const soRemaining = soTarget - todayCum;
   document.getElementById('gSOremain').textContent = soRemaining > 0 ? '(' + soRemaining.toLocaleString() + ')' : '(0)';
@@ -2823,34 +2852,43 @@ function renderGlance(fest) {
     compareEl.textContent = '';
   }
 
-  // Tickets remaining for BEP (value from feed — positive = still needed, negative = exceeded)
+  // BEP remaining from feed: positive = tickets still needed, negative = exceeded by that many
   const bepRemaining = n(b.tickets_BEP);
   const bepEl = document.getElementById('gBEPremain');
 
-  // BEP %: derive from current + remaining rather than trusting the raw BEP__% cell,
-  // which can lag or be inconsistent when remaining flips to 0/negative.
-  // bepTotal = tickets_current + bepRemaining (when remaining > 0, that's the full target)
-  // When remaining <= 0, BEP is hit → compute overshoot as % above 100.
+  // BEP %: always continuous — never capped at 100
   let bepPct;
   if (bepRemaining > 0) {
-    const bepTotal = tickCur + bepRemaining;
-    bepPct = bepTotal > 0 ? (tickCur / bepTotal * 100) : (n(b['BEP__%']) * 100);
+    bepPct = (tickCur / (tickCur + bepRemaining)) * 100;
   } else {
-    // Reached or exceeded: use sheet value but floor at 100
-    bepPct = Math.max(n(b['BEP__%']) * 100, 100);
+    // Use raw sheet %, fall back to 100 minimum when remaining is 0
+    const rawPct = n(b['BEP__%']) * 100;
+    bepPct = rawPct > 0 ? Math.max(rawPct, 100) : 100;
   }
-  document.getElementById('gBEP').textContent = bepPct.toFixed(1) + '%';
+  // Show BEP % — green + "+" prefix when over 100
+  setPctText('gBEP', bepPct);
+  // Style the gBEP element colour directly
+  const gBEPel = document.getElementById('gBEP');
+  if (gBEPel) gBEPel.style.color = bepPct > 100 ? 'var(--green)' : '';
 
-  bepEl.textContent = Math.round(bepRemaining).toLocaleString();
-  bepEl.style.color = bepRemaining >= 0 ? 'var(--green)' : 'var(--accent)';
+  // To BEP value: show overshoot as "+N" in green when exceeded
+  if (bepRemaining < 0) {
+    bepEl.textContent = '+' + Math.abs(Math.round(bepRemaining)).toLocaleString();
+    bepEl.style.color = 'var(--green)';
+  } else {
+    bepEl.textContent = Math.round(bepRemaining).toLocaleString();
+    bepEl.style.color = bepRemaining === 0 ? 'var(--green)' : 'var(--accent)';
+  }
 
-  // BEP projection sub-label
+  // BEP sub-label
   let projText = '';
-  if (bepRemaining < 0 && avg7val > 0) {
-    const daysToZero = Math.ceil(Math.abs(bepRemaining) / avg7val);
-    projText = `(${daysToZero}d to BEP)`;
-  } else if (bepRemaining >= 0) {
+  if (bepRemaining < 0) {
+    projText = '(+' + Math.abs(Math.round(bepRemaining)).toLocaleString() + ' overhead)';
+  } else if (bepRemaining === 0) {
     projText = '(REACHED)';
+  } else if (avg7val > 0) {
+    const daysToZero = Math.ceil(bepRemaining / avg7val);
+    projText = `(${daysToZero}d to BEP)`;
   }
   document.getElementById('gBEPproj').textContent = projText;
 
