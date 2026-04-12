@@ -2038,9 +2038,9 @@ function renderTickets(fest) {
   // Badge vs weekly avg (show actual avg value)
   const avgBadge = document.getElementById('kAvgBadge');
   const avgDiff = Math.round(todayDelta - avg7);
-  if (avgDiff > 0) { avgBadge.className='badge badge-up'; avgBadge.textContent=`▲ ${avgDiff} vs avg ${avg7}`; }
-  else if (avgDiff < 0) { avgBadge.className='badge badge-down'; avgBadge.textContent=`▼ ${Math.abs(avgDiff)} vs avg ${avg7}`; }
-  else { avgBadge.className='badge badge-neutral'; avgBadge.textContent=`— on avg ${avg7}`; }
+  if (avgDiff > 0) { avgBadge.className='badge badge-up'; avgBadge.textContent=`▲ ${avgDiff} vs avg 7D`; }
+  else if (avgDiff < 0) { avgBadge.className='badge badge-down'; avgBadge.textContent=`▼ ${Math.abs(avgDiff)} vs avg 7D`; }
+  else { avgBadge.className='badge badge-neutral'; avgBadge.textContent=`— avg 7D`; }
 
   // Festival comparison (selected festival via dropdown)
   const prevEvt = FEED.tickets.events[comparisonFestIdx];
@@ -2791,22 +2791,28 @@ function renderGlance(fest) {
     compareEl.textContent = '';
   }
 
-  // BEP %
-  document.getElementById('gBEP').textContent = (n(b['BEP__%']) * 100).toFixed(1) + '%';
-
-  // Tickets remaining for BEP (value from C4, green only when < 0)
-  const bepRemaining = n(b.tickets_BEP); // This is already the remaining value
+  // Tickets remaining for BEP (value from feed — positive = still needed, negative = exceeded)
+  const bepRemaining = n(b.tickets_BEP);
   const bepEl = document.getElementById('gBEPremain');
-  bepEl.textContent = Math.round(bepRemaining).toLocaleString(); // No decimals
 
-  // BEP color: green when reached/over (>= 0), default when remaining (< 0)
-  if (bepRemaining >= 0) {
-    bepEl.style.color = 'var(--green)'; // Green when reached/over
+  // BEP %: derive from current + remaining rather than trusting the raw BEP__% cell,
+  // which can lag or be inconsistent when remaining flips to 0/negative.
+  // bepTotal = tickets_current + bepRemaining (when remaining > 0, that's the full target)
+  // When remaining <= 0, BEP is hit → compute overshoot as % above 100.
+  let bepPct;
+  if (bepRemaining > 0) {
+    const bepTotal = tickCur + bepRemaining;
+    bepPct = bepTotal > 0 ? (tickCur / bepTotal * 100) : (n(b['BEP__%']) * 100);
   } else {
-    bepEl.style.color = 'var(--accent)'; // Default accent when remaining
+    // Reached or exceeded: use sheet value but floor at 100
+    bepPct = Math.max(n(b['BEP__%']) * 100, 100);
   }
+  document.getElementById('gBEP').textContent = bepPct.toFixed(1) + '%';
 
-  // BEP projection: days to reach 0 when remaining (< 0)
+  bepEl.textContent = Math.round(bepRemaining).toLocaleString();
+  bepEl.style.color = bepRemaining >= 0 ? 'var(--green)' : 'var(--accent)';
+
+  // BEP projection sub-label
   let projText = '';
   if (bepRemaining < 0 && avg7val > 0) {
     const daysToZero = Math.ceil(Math.abs(bepRemaining) / avg7val);
