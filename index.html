@@ -2426,15 +2426,19 @@ function renderBudget() {
     el('kRevNow').style.color = revCur < 0 ? 'var(--red)' : 'var(--text)';
   }
   if (ftp && tickCur) {
-    // projected tickets = tickCur + avg7 * DTE (read from glance projected element)
-    const projTickets = parseInt(document.getElementById('gProjected')?.textContent?.replace(/,/g,'')) || tickCur;
-    const addedRevenue = Math.max(0, projTickets - tickCur) * ftp;
+    // projected tickets = tickCur + avg7 * DTE
+    // avg7 is already set in DOM by renderTickets (runs before renderBudget)
+    const avg7 = parseInt(document.getElementById('kAvg7')?.textContent?.replace(/,/g,'')) || 0;
+    const dte = n(b.DTE);
+    const projTickets = tickCur + avg7 * dte;
+    const newTickets = projTickets - tickCur;
+    const addedRevenue = newTickets * ftp;
     const projRevenue = revCur + addedRevenue;
     if (el('kRevProj')) {
       el('kRevProj').textContent = fmt(projRevenue);
       el('kRevProj').style.color = projRevenue >= 0 ? 'var(--green)' : 'var(--yellow)';
     }
-    if (el('kRevProjSub')) el('kRevProjSub').textContent = '+₪' + Math.round(addedRevenue).toLocaleString() + ' from ' + (projTickets - tickCur).toLocaleString() + ' new tickets @ ₪' + ftp;
+    if (el('kRevProjSub')) el('kRevProjSub').textContent = '+₪' + Math.round(addedRevenue).toLocaleString() + ' from ' + newTickets.toLocaleString() + ' new tickets @ ₪' + Math.round(ftp);
     // also update glance revenue elements
     const gRevNow = document.getElementById('gRevNow');
     const gRevProj = document.getElementById('gRevProj');
