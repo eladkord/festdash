@@ -2421,10 +2421,14 @@ function renderBudget() {
 
   // Current revenue + Projected revenue cards
   const fmt = v => '₪' + Math.round(v).toLocaleString();
+  const revCurFmt = revCur !== 0 ? fmt(revCur) : '—';
   if (el('kRevNow')) {
-    el('kRevNow').textContent = revCur ? fmt(revCur) : '—';
+    el('kRevNow').textContent = revCurFmt;
     el('kRevNow').style.color = revCur < 0 ? 'var(--red)' : 'var(--text)';
   }
+  // Always show current revenue in glance
+  const gRevNowEl = document.getElementById('gRevNow');
+  if (gRevNowEl) { gRevNowEl.textContent = revCurFmt; }
   if (ftp && tickCur) {
     // projected tickets = tickCur + avg7 * DTE
     // avg7 is already set in DOM by renderTickets (runs before renderBudget)
