@@ -5,8 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>FestDash</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230d1117'/><rect x='1.5' y='1.5' width='29' height='29' rx='5' fill='none' stroke='%23c8ff00' stroke-width='1.5' stroke-opacity='0.5'/><text x='16' y='14' font-family='Arial Black,sans-serif' font-size='8' font-weight='900' fill='%23c8ff00' text-anchor='middle' letter-spacing='0.5'>FEST</text><text x='16' y='25' font-family='Arial Black,sans-serif' font-size='10' font-weight='900' fill='%23ffffff' text-anchor='middle' letter-spacing='1'>Dash</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Heebo:wght@700;800&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Heebo:wght@700;800&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@300;400;500;700&family=Outfit:wght@300;400;500;600;700&family=Heebo:wght@700;800&display=swap"></noscript>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
 <style>
 :root {
   --bg: #080b0f;
@@ -1739,7 +1742,7 @@ function findTodayRow(data, fest) {
 // ═══════════════════════════════════════════════════════
 // CACHE HELPERS
 // ═══════════════════════════════════════════════════════
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours — refresh in background, show cached instantly
 function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
 function saveCache(fest, data) {
   try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
