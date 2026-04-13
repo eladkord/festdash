@@ -1085,7 +1085,7 @@ body::before {
         <div class="glance-compare" id="gCompare"></div>
       </div>
       <div class="glance-sep"></div>
-      <div class="glance-item glance-wide">
+      <div class="glance-item" style="flex:1.1">
         <div class="glance-label">Now / SO</div>
         <div class="glance-so-row"><span class="glance-so-nums" id="gSOnum">—</span> <span style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--muted);margin-left:8px" id="gSOremain">—</span></div>
         <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
@@ -1094,12 +1094,12 @@ body::before {
       <!-- Revenue: now → projected -->
       <div class="glance-item">
         <div class="glance-label">Revenue</div>
-        <div style="display:flex;align-items:baseline;gap:6px;justify-content:center;margin-top:4px">
-          <div id="gRevNow" style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;color:var(--muted2)">—</div>
-          <div style="color:var(--muted);font-size:0.85rem">→</div>
-          <div id="gRevProj" style="font-family:'JetBrains Mono',monospace;font-size:1.15rem;color:var(--green)">—</div>
+        <div style="display:flex;align-items:baseline;gap:8px;justify-content:center;margin-top:2px">
+          <div id="gRevNow" class="glance-val" style="font-size:1.5rem;color:var(--muted2)">—</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--muted)">→</div>
+          <div id="gRevProj" class="glance-val" style="font-size:1.9rem;color:var(--green)">—</div>
         </div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin-top:4px">now → projected</div>
+        <div class="glance-label" style="font-size:0.6rem;margin-top:3px">now → projected</div>
       </div>
     </div>
     <!-- Row 2: SO % | TPD | TO BEP (center) | BEP % | TPD -->
