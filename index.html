@@ -1072,7 +1072,7 @@ body::before {
 
   <!-- QUICK GLANCE BAR -->
   <div class="glance-bar" id="glanceBar">
-    <!-- Row 1: Projected | NOW/SO graph (big) | To BEP -->
+    <!-- Row 1: Projected | NOW/SO graph (big) | Revenue Now→Projected -->
     <div class="glance-row">
       <div class="glance-item">
         <div class="glance-label">Projected</div>
@@ -1086,13 +1086,18 @@ body::before {
         <div class="glance-prog"><div class="glance-prog-fill" id="gSObar" style="width:0%"></div></div>
       </div>
       <div class="glance-sep"></div>
+      <!-- Revenue: now → projected -->
       <div class="glance-item">
-        <div class="glance-label">To BEP</div>
-        <div class="glance-val" id="gBEPremain">—</div>
-        <div style="font-family:'JetBrains Mono',monospace;font-size:0.65rem;color:var(--muted);margin-top:4px" id="gBEPproj">—</div>
+        <div class="glance-label">Revenue</div>
+        <div style="display:flex;align-items:baseline;gap:6px;justify-content:center;margin-top:4px">
+          <div id="gRevNow" style="font-family:'JetBrains Mono',monospace;font-size:1.05rem;color:var(--muted2)">—</div>
+          <div style="color:var(--muted);font-size:0.85rem">→</div>
+          <div id="gRevProj" style="font-family:'JetBrains Mono',monospace;font-size:1.15rem;color:var(--green)">—</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);text-align:center;margin-top:4px">now → projected</div>
       </div>
     </div>
-    <!-- Row 2: SO % | value TPD | BEP % | value TPD -->
+    <!-- Row 2: SO % | TPD | TO BEP (center) | BEP % | TPD -->
     <div class="glance-row" style="gap:0">
       <!-- SO group -->
       <div style="flex:1;text-align:center">
@@ -1105,6 +1110,13 @@ body::before {
             <div class="glance-label" style="font-size:1rem">TPD</div>
           </div>
         </div>
+      </div>
+      <div class="glance-sep"></div>
+      <!-- TO BEP — center between SO and BEP -->
+      <div style="flex:0 0 auto;text-align:center;padding:0 24px">
+        <div class="glance-label">To BEP</div>
+        <div class="glance-val" id="gBEPremain" style="font-size:2.2rem">—</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:0.6rem;color:var(--muted);margin-top:2px" id="gBEPproj">—</div>
       </div>
       <div class="glance-sep"></div>
       <!-- BEP group -->
@@ -1259,7 +1271,19 @@ body::before {
   <!-- BUDGET KPIs -->
   <div class="section-hdr" onclick="toggleSec(this)">Revenue <span class="section-toggle">▼</span></div>
   <div class="section-body">
-  <div class="g2">
+  <div class="g4">
+    <div class="card">
+      <div class="card-top-line tl-yellow"></div>
+      <div class="card-label">Current Revenue</div>
+      <div class="card-value md" id="kRevNow">—</div>
+      <div class="card-sub" id="kRevNowSub" style="margin-top:6px">current</div>
+    </div>
+    <div class="card">
+      <div class="card-top-line tl-green"></div>
+      <div class="card-label">Projected Revenue</div>
+      <div class="card-value md" id="kRevProj">—</div>
+      <div class="card-sub" id="kRevProjSub" style="margin-top:6px">at projected tickets</div>
+    </div>
     <div class="card">
       <div class="card-top-line tl-green"></div>
       <div class="card-label">BEP — Revenue</div>
@@ -2324,6 +2348,7 @@ function renderBudget() {
   const tpdBEP   = get('TPD_BEP');
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
+  const ftp      = get('FTP');           // C15: future ticket price
 
   // ── BEP % (tickets) ──
   // tickBEPr sign: negative=deficit(not reached), 0=reached, positive=overhead
@@ -2392,6 +2417,29 @@ function renderBudget() {
       setBar('barPPCBudget', ppcPct);
       if (el('kPPCBudgetTotal')) el('kPPCBudgetTotal').textContent = '₪' + Math.round(ppcTotal).toLocaleString();
     }
+  }
+
+  // Current revenue + Projected revenue cards
+  const fmt = v => '₪' + Math.round(v).toLocaleString();
+  if (el('kRevNow')) {
+    el('kRevNow').textContent = revCur ? fmt(revCur) : '—';
+    el('kRevNow').style.color = revCur < 0 ? 'var(--red)' : 'var(--text)';
+  }
+  if (ftp && tickCur) {
+    // projected tickets = tickCur + avg7 * DTE (read from glance projected element)
+    const projTickets = parseInt(document.getElementById('gProjected')?.textContent?.replace(/,/g,'')) || tickCur;
+    const addedRevenue = Math.max(0, projTickets - tickCur) * ftp;
+    const projRevenue = revCur + addedRevenue;
+    if (el('kRevProj')) {
+      el('kRevProj').textContent = fmt(projRevenue);
+      el('kRevProj').style.color = projRevenue >= 0 ? 'var(--green)' : 'var(--yellow)';
+    }
+    if (el('kRevProjSub')) el('kRevProjSub').textContent = '+₪' + Math.round(addedRevenue).toLocaleString() + ' from ' + (projTickets - tickCur).toLocaleString() + ' new tickets @ ₪' + ftp;
+    // also update glance revenue elements
+    const gRevNow = document.getElementById('gRevNow');
+    const gRevProj = document.getElementById('gRevProj');
+    if (gRevNow) gRevNow.textContent = revCur ? fmt(revCur) : '—';
+    if (gRevProj) gRevProj.textContent = fmt(projRevenue);
   }
 
   // BEP revenue card

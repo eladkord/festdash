@@ -31,8 +31,8 @@ function doGet(e) {
   const ticketsHeader = sheet.getRange('F3:U3').getValues()[0];
   const ticketsRows   = sheet.getRange('F4:U202').getValues().filter(r => r.some(c => c !== ''));
 
-  // Budget KPIs — A3:C14 (key in col A, value in col C)
-  const budgetRaw = sheet.getRange('A3:C14').getValues();
+  // Budget KPIs — A3:C15 (key in col A, value in col C; row 15 = FTP)
+  const budgetRaw = sheet.getRange('A3:C15').getValues();
   const budget    = {};
   budgetRaw.forEach(([k,,v]) => { if (k) budget[k] = v; });
   // PPC budget — C18 (total spend from Meta Ads), C25 (max budget)
