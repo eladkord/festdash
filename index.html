@@ -2451,8 +2451,8 @@ function renderBudget() {
     // also update glance revenue elements
     const gRevNow = document.getElementById('gRevNow');
     const gRevProj = document.getElementById('gRevProj');
-    if (gRevNow) gRevNow.textContent = revCur ? fmt(revCur) : '—';
-    if (gRevProj) gRevProj.textContent = fmt(projRevenue);
+    if (gRevNow) { gRevNow.textContent = revCur ? fmt(revCur) : '—'; gRevNow.style.color = revCur < 0 ? 'var(--red)' : 'var(--muted2)'; }
+    if (gRevProj) { gRevProj.textContent = fmt(projRevenue); gRevProj.style.color = projRevenue < 0 ? 'var(--red)' : 'var(--green)'; }
   }
 
   // BEP revenue card
