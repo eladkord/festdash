@@ -881,6 +881,11 @@ body::before {
       <label>Sale Launch Date (DD/MM/YYYY)</label>
       <input type="text" id="cfgLaunchDate" placeholder="07/12/2025" />
     </div>
+    <div class="input-group">
+      <label>Future Ticket Price — FTP (₪)</label>
+      <input type="number" id="cfgFTP" placeholder="e.g. 487" />
+      <div class="input-hint">Used for projected revenue calculation</div>
+    </div>
 
     <div class="settings-divider"></div>
     <div class="input-group">
@@ -2348,7 +2353,7 @@ function renderBudget() {
   const tpdBEP   = get('TPD_BEP');
   const revBEP   = get('revenue_BEP');
   const revCur   = get('revenue_current');
-  const ftp      = get('FTP');           // C15: future ticket price
+  const ftp      = get('FTP') || (festivals[activeFest]?.ftp) || 0;  // C15 or settings fallback
 
   // ── BEP % (tickets) ──
   // tickBEPr sign: negative=deficit(not reached), 0=reached, positive=overhead
@@ -2784,6 +2789,7 @@ function loadFestivalIntoForm(idx) {
   document.getElementById('cfgUrl').value = f.appsScriptUrl || '';
   document.getElementById('cfgEventDate').value = f.eventDate || '';
   document.getElementById('cfgLaunchDate').value = f.launchDate || '';
+  document.getElementById('cfgFTP').value = f.ftp || '';
 }
 
 function addNewFestival() {
@@ -2801,6 +2807,7 @@ function saveFestival() {
   const url  = document.getElementById('cfgUrl').value.trim();
   const eventDate  = document.getElementById('cfgEventDate').value.trim();
   const launchDate = document.getElementById('cfgLaunchDate').value.trim();
+  const ftp  = parseFloat(document.getElementById('cfgFTP').value) || 0;
   const pwd = document.getElementById('cfgPassword').value;
   if (!name || !url) { alert('Name and Apps Script URL are required.'); return; }
   // Password required on first setup
@@ -2808,7 +2815,7 @@ function saveFestival() {
   if (!storedPwd && !pwd) { alert('Please set a dashboard password.'); return; }
   if (pwd) localStorage.setItem('dashPassword', pwd);
   if (editingFest >= festivals.length) festivals.push({});
-  festivals[editingFest] = { name, appsScriptUrl: url, eventDate, launchDate };
+  festivals[editingFest] = { name, appsScriptUrl: url, eventDate, launchDate, ftp };
   activeFest = editingFest;
   localStorage.setItem('activeFest', activeFest);
   saveFestivalsToStorage();
