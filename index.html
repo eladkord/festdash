@@ -1742,18 +1742,20 @@ function findTodayRow(data, fest) {
 // ═══════════════════════════════════════════════════════
 // CACHE HELPERS
 // ═══════════════════════════════════════════════════════
-const CACHE_TTL = 2 * 60 * 60 * 1000; // 2 hours — refresh in background, show cached instantly
+const CACHE_TTL   = 2 * 60 * 60 * 1000;  // 2 hours max age
+const CACHE_FRESH = 15 * 60 * 1000;       // 15 min — skip background refetch if younger
+const CACHE_VER   = 'v12';                // bump this on every deploy → auto-clears old cache
 function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
 function saveCache(fest, data) {
-  try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), data })); } catch(e) {}
+  try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), ver: CACHE_VER, data })); } catch(e) {}
 }
 function loadCache(fest) {
   try {
     const raw = localStorage.getItem(cacheKey(fest));
     if (!raw) return null;
-    const { ts, data } = JSON.parse(raw);
-    if (Date.now() - ts > CACHE_TTL) return null;
-    // Invalidate only if key is missing entirely (0 is valid)
+    const { ts, ver, data } = JSON.parse(raw);
+    if (ver !== CACHE_VER) return null;            // deploy changed → invalidate
+    if (Date.now() - ts > CACHE_TTL) return null;  // too old → invalidate
     if (data.budget && !('ppc_budget_total' in data.budget)) return null;
     return { data, ageMs: Date.now() - ts };
   } catch(e) { return null; }
@@ -1772,13 +1774,15 @@ async function loadData() {
     appScriptData = cached.data;
     renderAll(fest);
     const ageMin = Math.round(cached.ageMs / 60000);
+    const isFresh = cached.ageMs < CACHE_FRESH;
     document.getElementById('lastUpdated').textContent =
-      'cached ' + (ageMin < 1 ? '<1' : ageMin) + 'm ago — refreshing…';
+      'cached ' + (ageMin < 1 ? '<1' : ageMin) + 'm ago' + (isFresh ? '' : ' — refreshing…');
+    if (isFresh) { hideLoading(); return; } // skip network call if data is fresh enough
   } else {
     showLoading('Fetching feed sheet...');
   }
 
-  // 2. Fetch fresh in background
+  // 2. Fetch fresh in background (only if cache is stale or missing)
   try {
     appScriptData = await fetchAppScript(fest.appsScriptUrl, fest.name);
     saveCache(fest, appScriptData);
@@ -2042,17 +2046,17 @@ function renderTickets(fest) {
   }
   document.getElementById('kTotal').textContent = todayCum.toLocaleString();
 
-  // 7-day avg (past = higher row indices, day offsets decrease downward)
+  // 7-day avg — skip today (may be partial) to avoid midnight dump; use last 7 completed days
   const d7 = [];
-  for (let i = todayRow; i <= Math.min(data.length-1, todayRow+6); i++) {
+  for (let i = todayRow+1; i <= Math.min(data.length-1, todayRow+7); i++) {
     const v = n(data[i]?.[cur.deltaCol]); if (!isNaN(v) && v >= 0) d7.push(v);
   }
   const avg7 = d7.length ? Math.round(d7.reduce((a,b)=>a+b,0)/d7.length) : 0;
   document.getElementById('kAvg7').textContent = avg7.toLocaleString();
 
-  // 14-day avg
+  // 14-day avg — skip today, use last 14 completed days
   const d14 = [];
-  for (let i = todayRow; i <= Math.min(data.length-1, todayRow+13); i++) {
+  for (let i = todayRow+1; i <= Math.min(data.length-1, todayRow+14); i++) {
     const v = n(data[i]?.[cur.deltaCol]); if (!isNaN(v) && v >= 0) d14.push(v);
   }
   const avg14 = d14.length ? Math.round(d14.reduce((a,b)=>a+b,0)/d14.length) : 0;
@@ -2429,14 +2433,14 @@ function renderBudget() {
 
   // Current revenue + Projected revenue cards
   const fmt = v => '₪' + Math.round(v).toLocaleString();
-  const revCurFmt = revCur !== 0 ? fmt(revCur) : '—';
+  const revCurFmt = fmt(revCur);
   if (el('kRevNow')) {
     el('kRevNow').textContent = revCurFmt;
     el('kRevNow').style.color = revCur < 0 ? 'var(--red)' : 'var(--text)';
   }
   // Always show current revenue in glance
   const gRevNowEl = document.getElementById('gRevNow');
-  if (gRevNowEl) { gRevNowEl.textContent = revCurFmt; }
+  if (gRevNowEl) { gRevNowEl.textContent = revCurFmt; gRevNowEl.style.color = revCur < 0 ? 'var(--red)' : 'var(--muted2)'; }
   if (ftp && tickCur) {
     // projected tickets = tickCur + avg7 * DTE
     // avg7 is already set in DOM by renderTickets (runs before renderBudget)
@@ -2451,10 +2455,8 @@ function renderBudget() {
       el('kRevProj').style.color = projRevenue >= 0 ? 'var(--green)' : 'var(--yellow)';
     }
     if (el('kRevProjSub')) el('kRevProjSub').textContent = '+₪' + Math.round(addedRevenue).toLocaleString() + ' from ' + newTickets.toLocaleString() + ' new tickets @ ₪' + Math.round(ftp);
-    // also update glance revenue elements
-    const gRevNow = document.getElementById('gRevNow');
+    // also update glance revenue projected
     const gRevProj = document.getElementById('gRevProj');
-    if (gRevNow) { gRevNow.textContent = revCur ? fmt(revCur) : '—'; gRevNow.style.color = revCur < 0 ? 'var(--red)' : 'var(--muted2)'; }
     if (gRevProj) { gRevProj.textContent = fmt(projRevenue); gRevProj.style.color = projRevenue < 0 ? 'var(--red)' : 'var(--green)'; }
   }
 
@@ -2619,6 +2621,28 @@ function renderMetaSpend(spend7d) {
     }
   };
 
+  const spendBarLabelsPlugin = {
+    id: 'spendBarLabels',
+    afterDatasetsDraw(chart) {
+      const { ctx, data } = chart;
+      ctx.save();
+      const meta = chart.getDatasetMeta(0);
+      data.datasets[0].data.forEach((val, i) => {
+        if (!val) return;
+        const bar = meta.data[i];
+        const barHeight = bar.base - bar.y;
+        ctx.font = 'bold 10px JetBrains Mono, monospace';
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const label = '₪' + Math.round(val).toLocaleString();
+        const yPos = barHeight > 18 ? bar.base - 5 : bar.y - 4;
+        ctx.fillText(label, bar.x, yPos);
+      });
+      ctx.restore();
+    }
+  };
+
   chartMetaSpend = new Chart(ctx, {
     type: 'bar',
     data: {
@@ -2632,7 +2656,8 @@ function renderMetaSpend(spend7d) {
         borderRadius: 3,
       }]
     },
-    options: opts
+    options: opts,
+    plugins: [spendBarLabelsPlugin],
   });
 }
 
@@ -3085,8 +3110,11 @@ function baseChartOpts() {
 function renderSentiment(fest) {
   const el = document.getElementById('sentimentBar');
   if (!el) return;
-  const b  = appScriptData.budget || {};
-  const tickCur   = n(b.tickets_current);
+  const b    = appScriptData.budget || {};
+  const data = appScriptData.tickets;
+  const cur  = FEED.tickets.events[FEED.tickets.currentIdx];
+  const todayRow = data.length ? findTodayRow(data, fest) : -1;
+  const tickCur   = todayRow >= 0 ? n(data[todayRow]?.[cur.cumCol]) : n(b.tickets_current);
   const tickSOrem = Math.abs(n(b.tickets_SO));
   const soTarget  = tickCur + tickSOrem;
   const dte       = n(b.DTE);
@@ -3126,7 +3154,7 @@ function renderInsights(fest) {
 
   const cur       = FEED.tickets.events[FEED.tickets.currentIdx];
   const todayRow  = findTodayRow(data, fest);
-  const tickCur   = n(b.tickets_current);
+  const tickCur   = n(data[todayRow]?.[cur.cumCol]) || n(b.tickets_current);
   const tickSOrem = Math.abs(n(b.tickets_SO));
   const soTarget  = tickCur + tickSOrem;
   const dte       = n(b.DTE);
@@ -3207,7 +3235,7 @@ function renderInsights(fest) {
   const s2Bullets  = [];
   s2Bullets.push(`Total spend: <strong>₪${totalSpend.toLocaleString()}</strong> · Last 7 days: <strong>₪${spend7d.toLocaleString()}</strong>`);
   s2Bullets.push(`CPL: <strong>₪${cplAvg}</strong> vs ₪${CPL_GOAL} goal — <strong>${cplDiff >= 0 ? '+' : ''}${cplDiffPct}% ${cplDiff >= 0 ? 'above' : 'below'} target</strong>`);
-  s2Bullets.push(`Today: <strong>${convToday} conversions</strong> at ₪${cplToday}/conv · 7-day avg: ${convAvg}/day`);
+  s2Bullets.push(`Today: <strong>${convToday} conversions</strong> at ₪${cplToday}/conv · 7-day avg: ${convAvg.toFixed(1)}/day`);
   if (tickSOrem > 0) s2Bullets.push(`At current CPL, filling remaining <strong>${tickSOrem.toLocaleString()} tickets via Meta</strong> ≈ ₪${costToSO.toLocaleString()}`);
   const s2Rec = cplAvg > CPL_GOAL
     ? `⚡ CPL is ₪${(cplAvg - CPL_GOAL).toFixed(0)} over goal. Test new creatives, tighter audiences, or retargeting to bring cost down.`
