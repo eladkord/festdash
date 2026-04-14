@@ -1744,7 +1744,7 @@ function findTodayRow(data, fest) {
 // ═══════════════════════════════════════════════════════
 const CACHE_TTL   = 2 * 60 * 60 * 1000;  // 2 hours max age
 const CACHE_FRESH = 15 * 60 * 1000;       // 15 min — skip background refetch if younger
-const CACHE_VER   = 'v12';                // bump this on every deploy → auto-clears old cache
+const CACHE_VER   = 'v13';                // bump this on every deploy → auto-clears old cache
 function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
 function saveCache(fest, data) {
   try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), ver: CACHE_VER, data })); } catch(e) {}
@@ -3114,9 +3114,10 @@ function renderSentiment(fest) {
   const data = appScriptData.tickets;
   const cur  = FEED.tickets.events[FEED.tickets.currentIdx];
   const todayRow = data.length ? findTodayRow(data, fest) : -1;
-  const tickCur   = todayRow >= 0 ? n(data[todayRow]?.[cur.cumCol]) : n(b.tickets_current);
-  const tickSOrem = Math.abs(n(b.tickets_SO));
-  const soTarget  = tickCur + tickSOrem;
+  const budgetTickCur = n(b.tickets_current);
+  const budgetSOrem   = Math.abs(n(b.tickets_SO));
+  const soTarget  = budgetTickCur + budgetSOrem;
+  const tickCur   = todayRow >= 0 ? n(data[todayRow]?.[cur.cumCol]) : budgetTickCur;
   const dte       = n(b.DTE);
   const avg7      = parseInt(document.getElementById('kAvg7')?.textContent?.replace(/,/g,'')) || 0;
   const projected = tickCur + avg7 * dte;
@@ -3154,9 +3155,12 @@ function renderInsights(fest) {
 
   const cur       = FEED.tickets.events[FEED.tickets.currentIdx];
   const todayRow  = findTodayRow(data, fest);
-  const tickCur   = n(data[todayRow]?.[cur.cumCol]) || n(b.tickets_current);
-  const tickSOrem = Math.abs(n(b.tickets_SO));
-  const soTarget  = tickCur + tickSOrem;
+  // soTarget is a fixed capacity — derive from budget fields (both relative to same base)
+  const budgetTickCur = n(b.tickets_current);
+  const budgetSOrem   = Math.abs(n(b.tickets_SO));
+  const soTarget  = budgetTickCur + budgetSOrem;              // fixed: 1586+1064=2650
+  const tickCur   = n(data[todayRow]?.[cur.cumCol]) || budgetTickCur; // live cumulative
+  const tickSOrem = Math.max(0, soTarget - tickCur);          // live remaining
   const dte       = n(b.DTE);
   const avg7      = parseInt(document.getElementById('kAvg7')?.textContent?.replace(/,/g,'')) || 0;
   const projected = Math.round(tickCur + avg7 * dte);
