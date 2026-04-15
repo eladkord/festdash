@@ -1465,6 +1465,7 @@ const DEFAULT_FEST = {
   appsScriptUrl: 'https://script.google.com/macros/s/AKfycbwINgOnlf3VaZsZgm_ddIPFmq3XPuK-BkeZbfUj5CNiCLHi7VNLRYrejo92ymlyuse9Rg/exec',
   eventDate: '23/04/2026',
   launchDate: '07/12/2025',
+  ftp: 487,
 };
 
 // ═══════════════════════════════════════════════════════
@@ -1744,7 +1745,7 @@ function findTodayRow(data, fest) {
 // ═══════════════════════════════════════════════════════
 const CACHE_TTL   = 2 * 60 * 60 * 1000;  // 2 hours max age
 const CACHE_FRESH = 15 * 60 * 1000;       // 15 min — skip background refetch if younger
-const CACHE_VER   = 'v13';                // bump this on every deploy → auto-clears old cache
+const CACHE_VER   = 'v14';                // bump this on every deploy → auto-clears old cache
 function cacheKey(fest) { return 'fdc_' + (fest?.name || 'default'); }
 function saveCache(fest, data) {
   try { localStorage.setItem(cacheKey(fest), JSON.stringify({ ts: Date.now(), ver: CACHE_VER, data })); } catch(e) {}
@@ -2867,12 +2868,27 @@ function togglePwdVis() {
 }
 
 function seedDefaultFest() {
-  // If no festivals saved on this device, auto-load the baked-in default
-  if (!festivals.length && DEFAULT_FEST.appsScriptUrl) {
+  if (!DEFAULT_FEST.appsScriptUrl) return;
+  if (!festivals.length) {
+    // New device — seed from scratch
     festivals = [{ ...DEFAULT_FEST }];
     activeFest = 0;
     saveFestivalsToStorage();
     localStorage.setItem('activeFest', '0');
+  } else {
+    // Existing device — merge any missing fields from DEFAULT_FEST into matching festival
+    let merged = false;
+    festivals.forEach(f => {
+      if (f.name === DEFAULT_FEST.name) {
+        Object.keys(DEFAULT_FEST).forEach(k => {
+          if (f[k] === undefined || f[k] === null || f[k] === '') {
+            f[k] = DEFAULT_FEST[k];
+            merged = true;
+          }
+        });
+      }
+    });
+    if (merged) saveFestivalsToStorage();
   }
 }
 
