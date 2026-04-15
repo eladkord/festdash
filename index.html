@@ -2248,11 +2248,14 @@ function setCompZoom(days) {
 // ─── CHART: COMPARISON ──────────────────────────────────────
 function renderChartComp(data, todayRow) {
   const curOffset = n(data[todayRow]?.[FEED.tickets.dayCol]); // today's day offset (e.g. -17)
+  const avg7    = parseInt(document.getElementById('kAvg7')?.textContent) || 0;
+  const tickCur = n(data[todayRow]?.[FEED.tickets.events[FEED.tickets.currentIdx].cumCol]);
   const widths = [1.5, 1.5, 2, 2.5];
   const datasets = [];
 
   // Build master x-axis: all unique day offsets across all visible festivals
   // Past festivals → up to day 0 (event day). Current → up to today only.
+  // Also include future offsets (curOffset+1 → 0) so projection line has room.
   const offsetSet = new Set();
   FEED.tickets.events.forEach((ev, idx) => {
     if (!compVisible.includes(idx)) return;
@@ -2264,6 +2267,10 @@ function renderChartComp(data, todayRow) {
       if (d <= maxOffset && v > 0) offsetSet.add(d);
     }
   });
+  // Add future day offsets for projection line (day after today → event day 0)
+  if (compVisible.includes(FEED.tickets.currentIdx) && curOffset < 0) {
+    for (let d = curOffset + 1; d <= 0; d++) offsetSet.add(d);
+  }
   let masterLabels = [...offsetSet].sort((a, b) => a - b); // ascending (most negative → 0)
 
   // Filter by zoom days if specified
@@ -2300,6 +2307,25 @@ function renderChartComp(data, todayRow) {
     }
   });
 
+  // Projection dataset: dashed yellow line from today → event day 0
+  if (compVisible.includes(FEED.tickets.currentIdx) && avg7 > 0 && tickCur > 0 && curOffset < 0) {
+    const projData = masterLabels.map(d => {
+      if (d < curOffset) return null;
+      return tickCur + avg7 * (d - curOffset);
+    });
+    datasets.push({
+      label: 'Projected',
+      data: projData,
+      borderColor: 'rgba(251, 191, 36, 0.55)',
+      backgroundColor: 'transparent',
+      borderWidth: 1.5,
+      borderDash: [6, 4],
+      pointRadius: 0,
+      tension: 0,
+      spanGaps: false,
+    });
+  }
+
   const ctx = document.getElementById('chartComp').getContext('2d');
   if (chartComp) chartComp.destroy();
   const compOpts = baseChartOpts();
@@ -2307,6 +2333,13 @@ function renderChartComp(data, todayRow) {
   compOpts.plugins.tooltip = {
     ...compOpts.plugins.tooltip,
     mode: 'index', intersect: false,
+    callbacks: {
+      label: ctx => {
+        if (ctx.parsed.y === null) return null;
+        const prefix = ctx.dataset.label === 'Projected' ? '~' : '';
+        return ` ${prefix}${ctx.dataset.label}: ${Math.round(ctx.parsed.y).toLocaleString()}`;
+      },
+    },
   };
   compOpts.onClick = function(evt) {
     const points = chartComp.getElementsAtEventForMode(evt, 'index', { intersect: false }, false);
